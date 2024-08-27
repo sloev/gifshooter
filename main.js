@@ -253,15 +253,15 @@ initKeys();
         }
         var x = event.alpha-initialAlpha;  // In degree in the range [-180,180]
   var y = event.gamma-initialGamma; // In degree in the range [-90,90]
-  if(x<-90)x=-90
-  if(x>90)x=90
+  if(x<-180)x=-180
+  if(x>180)x=180
   if(y<-90)y=-90
   if(y>90)y=90
   x = x/90.0
   y=y/90
 
         if (shootNow) {
-            const e = { spriteUrlIndex, peerId: room.selfId, x:event.alpha, y:event.beta }
+            const e = { spriteUrlIndex, peerId: room.selfId, x:x, alpha:event.alpha, y:y, beta:event.beta }
             console.log(e)
             shoot(e)
         }
