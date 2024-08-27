@@ -38,7 +38,6 @@ const [shoot, getShot] = room.makeAction('shoot')
 // listen for drinks sent to you
 getShot((data, peerId) => {
     events.push(data)
-    console.log(data)
 }
 )
 if (!!roomName && roomName != "notinitialized") {
