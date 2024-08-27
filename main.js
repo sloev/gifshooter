@@ -166,7 +166,7 @@ initKeys();
                 const item = events.pop()
 
                 getSprite(item.peerId, spritesheetUrls[item.spriteUrlIndex]).then(sprite => {
-                    
+                    console.log("raw", item.x, item.y)
                     sprite.x = item.x*context.canvas.width/2+context.canvas.width/2;
                     sprite.y = item.y*context.canvas.height/2+context.canvas.height/2;
                     console.log(sprite.x, sprite.y)
@@ -251,7 +251,7 @@ initKeys();
             initialAlpha = event.alpha
             initialGamma = event.gamma
         }
-        var x = event.beta-initialAlpha;  // In degree in the range [-180,180]
+        var x = event.alpha>-initialAlpha;  // In degree in the range [-180,180]
   var y = event.gamma-initialGamma; // In degree in the range [-90,90]
   if(x<-90)x=-90
   if(x>90)x=90
@@ -261,7 +261,7 @@ initKeys();
   y=y/90
 
         if (shootNow) {
-            const e = { spriteUrlIndex, peerId: room.selfId, x, y }
+            const e = { spriteUrlIndex, peerId: room.selfId, event, y }
             console.log(e)
             shoot(e)
         }
