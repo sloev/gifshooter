@@ -38,6 +38,7 @@ const [shoot, getShot] = room.makeAction('shoot')
 // listen for drinks sent to you
 getShot((data, peerId) => {
     events.push(data)
+    console.log(data)
 }
 )
 if (!!roomName && roomName != "notinitialized") {
@@ -158,8 +159,8 @@ initKeys();
                 const item = events.pop()
 
                 getSprite(item.peerId, spritesheetUrls[item.spriteUrlIndex]).then(sprite => {
-                    sprite.x = item.x;
-                    sprite.y = item.y
+                    sprite.x = item.x*context.canvas.width;
+                    sprite.y = item.y*context.canvas.height;
                 })
 
             }
@@ -169,7 +170,7 @@ initKeys();
 
             if (pointerPressed("left")) {
                 let m = getPointer()
-                const e = { spriteUrlIndex, peerId: room.selfId, x: m.x, y: m.y }
+                const e = { spriteUrlIndex, peerId: room.selfId, x: m.x/context.canvas.width, y: m.ycontext.canvas.height }
                 shoot(e)
                 events.push(e)
 
@@ -244,7 +245,6 @@ initKeys();
             const e = { spriteUrlIndex, peerId: room.selfId, x, y }
             console.log(e)
             shoot(e)
-            navigator.vibrate(10);
         }
     })
 
