@@ -146,7 +146,8 @@ if (presentMode) {
     let { canvas, context } = init("game");
     initPointer();
 initKeys();
-
+    let qr = document.getElementById("qr")
+    qr.style.display="block"
 
     context.canvas.width = window.innerWidth;
     context.canvas.height = window.innerHeight;
@@ -221,8 +222,7 @@ initKeys();
     let { canvasShoot, contextShoot } = init("shootbutton");
     let shootbuttoncanvas = document.getElementById("shootbutton")
     let expander = document.getElementById("expand")
-    let qr = document.getElementById("qr")
-    qr.style.display="block"
+
     shootbuttoncanvas.width = expander.clientWidth;
     shootbuttoncanvas.height = expander.clientHeight;
     console.log(canvasShoot, contextShoot, "canvas")
