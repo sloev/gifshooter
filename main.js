@@ -44,7 +44,6 @@ const [shoot, getShot] = room.makeAction('shoot')
 // listen for drinks sent to you
 getShot((data, peerId) => {
     events.push(data)
-    console.log(data.x, data.y)
 }
 )
 if (!!roomName && roomName != "notinitialized") {
@@ -166,7 +165,7 @@ initKeys();
                 const item = events.pop()
 
                 getSprite(item.peerId, spritesheetUrls[item.spriteUrlIndex]).then(sprite => {
-                    console.log("raw", item.x, item.y)
+                    console.log("raw", item)
                     sprite.x = item.x*context.canvas.width/2+context.canvas.width/2;
                     sprite.y = item.y*context.canvas.height/2+context.canvas.height/2;
                     console.log(sprite.x, sprite.y)
@@ -219,10 +218,10 @@ initKeys();
     loop.start(); // start the game
 } else if (roomName != "notinitialized") {
     document.getElementById("phone").style.display = "block"
-    let initialAlpha, initialGamma;
+    let initialAlpha, initialBeta;
     document.getElementById("reset").onclick = ()=>{
         initialAlpha=null
-        initialGamma = null
+        initialBeta = null
     }
    
     let previewGif;
@@ -249,15 +248,15 @@ initKeys();
     window.addEventListener('deviceorientation', async (event) => {
         if (!initialAlpha) {
             initialAlpha = event.alpha
-            initialGamma = event.gamma
+            initialBeta = event.beta
         }
         var x = event.alpha-initialAlpha;  // In degree in the range [-180,180]
-  var y = event.gamma-initialGamma; // In degree in the range [-90,90]
+  var y = event.beta-initialBeta; // In degree in the range [-90,90]
   if(x<-180)x=-180
   if(x>180)x=180
   if(y<-90)y=-90
   if(y>90)y=90
-  x = x/90.0
+  x = x/180.0
   y=y/90
 
         if (shootNow) {
