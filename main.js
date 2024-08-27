@@ -61,12 +61,16 @@ const spritesheets = {}
 
 let canvas_index = 0
 const canvases = []
+import sprite_01 from './public/sprites/01.28.png'
+import sprite_02 from './public/sprites/02.20.png'
+import sprite_03 from './public/sprites/03.14.png'
+import sprite_04 from './public/sprites/04.62.png'
 
 const spritesheetUrls = [
-    "/sprites/01.28.png",
-    "/sprites/02.20.png",
-    "/sprites/03.14.png",
-    "/sprites/04.62.png"
+    sprite_01,
+sprite_02,
+sprite_03,
+sprite_04
 ]
 let spriteUrlIndex = Math.floor(Math.random() * spritesheetUrls.length);
 
