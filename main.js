@@ -1,5 +1,6 @@
 import kontra, { load } from 'kontra';
 import { joinRoom } from 'trystero'
+import QRCode from 'qrcode'
 
 let { init, Sprite, SpriteSheet, keyPressed, GameLoop, initKeys, pointerPressed, onInput, initPointer, getPointer } = kontra;
 
@@ -8,7 +9,12 @@ const params = new URLSearchParams(window.location.search)
 let roomName = params.get("room") || "notinitialized"
 console.log(roomName)
 let presentMode = params.get("present") == "true" ? true : false;
+var canvas = document.getElementById('qr')
 
+QRCode.toCanvas(canvas, window.location.href.split("?")[0]+`?${roomName}`, function (error) {
+  if (error) console.error(error)
+  console.log('success!');
+})
 const goHome = () => {
     window.open(window.location.href.split("?")[0], "_self")
     return false
@@ -215,6 +221,8 @@ initKeys();
     let { canvasShoot, contextShoot } = init("shootbutton");
     let shootbuttoncanvas = document.getElementById("shootbutton")
     let expander = document.getElementById("expand")
+    let qr = document.getElementById("qr")
+    qr.style.display="block"
     shootbuttoncanvas.width = expander.clientWidth;
     shootbuttoncanvas.height = expander.clientHeight;
     console.log(canvasShoot, contextShoot, "canvas")

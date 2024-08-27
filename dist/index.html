@@ -60,11 +60,11 @@ user-select:none;
             left: 0;
         }
 
-        #online {
+        .online {
             position: absolute;
             z-index: 10;
-            right: 100px;
-            top: 0;
+            right: 0;
+            bottom: 0;
         }
 
         #phone {
@@ -96,7 +96,7 @@ user-select:none;
 
         }
     </style>
-  <script type="module" crossorigin src="/gifshooter/assets/index-BgEbecmf.js"></script>
+  <script type="module" crossorigin src="/gifshooter/assets/index-q7JJNTXc.js"></script>
 </head>
 
 <body>
@@ -111,9 +111,12 @@ user-select:none;
     </div>
     <canvas id="game" width="100%" height="100%" style="background: black"></canvas>
     <button id="home" type="submit" style="display:none;">←</button>
-    <div id="online">0 peers
+    <div class="online"> 
+        <div id="online">0 peers
+            <canvas id="qr" width="100px" height="100px" style="display:none"></canvas>
 
-    </div>
+        </div>       
+</div>
     <div id="phone" style="display:none;">
         <div class="gifs">
             <button id="previousgif" class="gifbutton">←</button>
