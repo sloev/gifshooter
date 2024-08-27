@@ -261,7 +261,7 @@ initKeys();
   y=y/90
 
         if (shootNow) {
-            const e = { spriteUrlIndex, peerId: room.selfId, event, y }
+            const e = { spriteUrlIndex, peerId: room.selfId, x:event.alpha, y:event.gamma }
             console.log(e)
             shoot(e)
         }
