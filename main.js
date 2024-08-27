@@ -217,6 +217,9 @@ initKeys();
 } else if (roomName != "notinitialized") {
     document.getElementById("phone").style.display = "block"
     let initialAlpha;
+    document.getElementById("reset").onclick = ()=>{
+        initialAlpha=null
+    }
    
     let previewGif;
     let { canvasShoot, contextShoot } = init("shootbutton");
