@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css">
+
+    <title>Vite App</title>
+    <style>
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            color: aquamarine;
+
+            background-color: black;
+        }
+
+        #setting {
+            padding: 0;
+            position: absolute;
+            z-index: 10;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 1;
+            -webkit-transition: opacity 2s;
+            -moz-transition: opacity 2s;
+            -o-transition: opacity 2s;
+            transition: opacity 2s;
+        }
+
+        #canvas {
+            position: absolute;
+            z-index: 0;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 0
+        }
+
+        #home {
+            position: absolute;
+            z-index: 10;
+            top: 0;
+            left: 0;
+        }
+
+        #online {
+            position: absolute;
+            z-index: 10;
+            right: 100px;
+            top: 0;
+        }
+
+        #phone {
+            width: 100%;
+            position: absolute;
+            top: 50px;
+        }
+
+        .gifs {
+            height: 70vh;
+
+            display: flex;
+        }
+
+        .gifbutton {
+            padding: 0 10px 0 10px;
+            background-color: aquamarine;
+            color: black;
+            margin: 0 10px 0 10px;
+        }
+
+        #expand {
+            width: 100%;
+            flex-grow: 1;
+        }
+
+        #shootbutton {
+            border-radius: 25px;
+
+        }
+    </style>
+</head>
+
+<body>
+
+
+    <div id="setting">
+        <label for="room">Room:</label>
+        <input tname="room" id="room" type="text" value="default">
+        <label for="present">Present mode?</label>
+        <input id="present" type="checkbox" name="present mode" id="">
+        <button id="go" type="submit">GIF SHOOOOT!</button>
+    </div>
+    <canvas id="game" width="100%" height="100%" style="background: black"></canvas>
+    <button id="home" type="submit" style="display:none;">←</button>
+    <div id="online">0 peers
+
+    </div>
+    <div id="phone" style="display:none;">
+        <div class="gifs">
+            <button id="previousgif" class="gifbutton">←</button>
+            <div id="expand">
+                <canvas id="shootbutton" width="100%" height="100%" style="background:red"></canvas>
+            </div>
+            <button id="nextgif" class="gifbutton">→</button>
+        </div>
+
+    </div>
+
+
+    <script type="module" src="/main.js"></script>
+</body>
+
+</html>
