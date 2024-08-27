@@ -251,7 +251,7 @@ initKeys();
             initialAlpha = event.alpha
             initialGamma = event.gamma
         }
-        var x = event.alpha>-initialAlpha;  // In degree in the range [-180,180]
+        var x = event.alpha-initialAlpha;  // In degree in the range [-180,180]
   var y = event.gamma-initialGamma; // In degree in the range [-90,90]
   if(x<-90)x=-90
   if(x>90)x=90
