@@ -239,8 +239,8 @@ initKeys();
 
         var b = event.beta;
         var g = event.alpha - initialAlpha
-        var x = Math.sin(g / 180 * Math.PI);
-        var y = Math.sin(b / 180 * Math.PI);
+        var x = 1.0 - Math.sin(g / 180 * Math.PI);
+        var y = 1.0 - Math.sin(b / 180 * Math.PI);
         if (shootNow) {
             const e = { spriteUrlIndex, peerId: room.selfId, x, y }
             console.log(e)
