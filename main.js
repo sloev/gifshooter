@@ -44,6 +44,7 @@ const [shoot, getShot] = room.makeAction('shoot')
 // listen for drinks sent to you
 getShot((data, peerId) => {
     events.push(data)
+    console.log(data.x, data.y)
 }
 )
 if (!!roomName && roomName != "notinitialized") {
@@ -165,8 +166,9 @@ initKeys();
                 const item = events.pop()
 
                 getSprite(item.peerId, spritesheetUrls[item.spriteUrlIndex]).then(sprite => {
-                    sprite.x = item.x*context.canvas.width;
-                    sprite.y = item.y*context.canvas.height;
+                    
+                    sprite.x = item.x*context.canvas.width/2+context.canvas.width/2;
+                    sprite.y = item.y*context.canvas.height/2+context.canvas.width/2;
                 })
 
             }
@@ -219,6 +221,7 @@ initKeys();
     let initialAlpha;
     document.getElementById("reset").onclick = ()=>{
         initialAlpha=null
+        initialGamma = null
     }
    
     let previewGif;
@@ -245,12 +248,17 @@ initKeys();
     window.addEventListener('deviceorientation', async (event) => {
         if (!initialAlpha) {
             initialAlpha = event.alpha
+            initialGamma = event.gamma
         }
+        var x = event.beta-initialAlpha;  // In degree in the range [-180,180]
+  var y = event.gamma-initialGamma; // In degree in the range [-90,90]
+  if(x<-90)x=-90
+  if(x>90)x=90
+  if(y<-90)y=-90
+  if(y>90)y=90
+  x = x/90.0
+  y=y/90
 
-        var b = event.beta;
-        var g = event.alpha - initialAlpha
-        var x = 1.0 - Math.sin(g / 180 * Math.PI);
-        var y = 1.0 - Math.sin(b / 180 * Math.PI);
         if (shootNow) {
             const e = { spriteUrlIndex, peerId: room.selfId, x, y }
             console.log(e)
