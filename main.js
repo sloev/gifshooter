@@ -168,7 +168,8 @@ initKeys();
                 getSprite(item.peerId, spritesheetUrls[item.spriteUrlIndex]).then(sprite => {
                     
                     sprite.x = item.x*context.canvas.width/2+context.canvas.width/2;
-                    sprite.y = item.y*context.canvas.height/2+context.canvas.width/2;
+                    sprite.y = item.y*context.canvas.height/2+context.canvas.height/2;
+                    console.log(sprite.x, sprite.y)
                 })
 
             }
@@ -218,7 +219,7 @@ initKeys();
     loop.start(); // start the game
 } else if (roomName != "notinitialized") {
     document.getElementById("phone").style.display = "block"
-    let initialAlpha;
+    let initialAlpha, initialGamma;
     document.getElementById("reset").onclick = ()=>{
         initialAlpha=null
         initialGamma = null
