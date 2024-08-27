@@ -1,0 +1,20 @@
+{
+  "name": "vite-project",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^5.4.1"
+  },
+  "dependencies": {
+    "kontra": "^10.0.2",
+    "rapid-render": "^0.0.4",
+    "spritejs": "^3.8.3",
+    "trystero": "^0.20.0"
+  }
+}
