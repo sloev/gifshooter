@@ -26,9 +26,11 @@ user-select:none;
             color: aquamarine;
 
             background-color: black;
+            
         }
         
-
+h1 {            color:aquamarine;text-align: center;
+}
         #setting {
             padding: 0;
             position: absolute;
@@ -75,9 +77,10 @@ user-select:none;
         }
 
         .gifs {
-            height: 70vw;
+            height: 50vw;
 
             display: flex;
+            margin: 10px 0 10px 0;
         }
 
         .gifbutton {
@@ -88,16 +91,31 @@ user-select:none;
         }
 
         #expand {
-            width: 100%;
+    border-radius: 50px;
+
+    width: 300px;
+    margin: 0 auto;
+    overflow: hidden;
+    position: relative;
+   
             flex-grow: 1;
         }
 
         #shootbutton {
-            border-radius: 25px;
+            overflow: hidden;
+    position: absolute;
+    background: red;
+    width: 250vw;
+    height: 75vw;
+    top: -25%;
+    left: 50%;
+    margin-left: -125vw;
+    transition: 0.1s;
 
         }
+        #shootbutton:hover, #shootbutton:active{background: rgb(173, 255, 20);}
     </style>
-  <script type="module" crossorigin src="/gifshooter/assets/index-DywnSZiR.js"></script>
+  <script type="module" crossorigin src="/gifshooter/assets/index-DBGSElkC.js"></script>
 </head>
 
 <body>
@@ -119,14 +137,15 @@ user-select:none;
 
 </div>
     <div id="phone" style="display:none;">
+        <img id="logo" alt="">
         <div class="gifs">
             <button id="previousgif" class="gifbutton">←</button>
             <div id="expand">
-                <canvas id="shootbutton" width="100%" height="100%" style="background:red"></canvas>
+                <canvas id="shootbutton" width="100%" height="50%" ></canvas>
             </div>
             <button id="nextgif" class="gifbutton">→</button>
         </div>
-        <button id="reset" style="width:100%" >point and reset</button>
+        <button id="reset" style="width:100%" >point to display and calibrate</button>
 
 
     </div>

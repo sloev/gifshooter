@@ -103,6 +103,10 @@ import sprite_30 from './public/sprites/32.17.png'
 
 
 
+import logo from './public/logo.gif'
+
+document.getElementById("logo").src = logo
+
 const spritesheetUrls = [
     sprite_01,
     sprite_02,
@@ -259,7 +263,8 @@ initKeys();
         render: function () { // render the game state
             canvas_index++
             canvas_index = canvas_index % canvases.length
-            
+            let c = canvases[canvas_index]
+
           
             context.drawImage(
                 c,
@@ -295,6 +300,7 @@ initKeys();
     shootbuttoncanvas.width = expander.clientWidth;
     shootbuttoncanvas.height = expander.clientHeight;
     console.log(canvasShoot, contextShoot, "canvas")
+
     document.getElementById("nextgif").onclick = ()=>{
         spriteUrlIndex = (spriteUrlIndex + 1) % spritesheetUrls.length
     }
