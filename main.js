@@ -13,7 +13,7 @@ console.log(roomName)
 let presentMode = params.get("present") == "true" ? true : false;
 var canvas = document.getElementById('qr')
 
-QRCode.toCanvas(canvas, window.location.href.split("?")[0] + `?rom=${roomName}`, function (error) {
+QRCode.toCanvas(canvas, window.location.href.split("?")[0] + `?room=${roomName}`, function (error) {
     if (error) console.error(error)
     console.log('success!');
 })
