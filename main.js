@@ -2,6 +2,7 @@ import kontra, { load } from 'kontra';
 import { joinRoom } from 'trystero'
 import QRCode from 'qrcode'
 import NoSleep from 'nosleep.js';
+var noSleep = new NoSleep();
 
 let { init, Sprite, SpriteSheet, keyPressed, GameLoop, initKeys, pointerPressed, onInput, initPointer, getPointer } = kontra;
 
@@ -12,7 +13,7 @@ console.log(roomName)
 let presentMode = params.get("present") == "true" ? true : false;
 var canvas = document.getElementById('qr')
 
-QRCode.toCanvas(canvas, window.location.href.split("?")[0] + `?${roomName}`, function (error) {
+QRCode.toCanvas(canvas, window.location.href.split("?")[0] + `?room=${roomName}`, function (error) {
     if (error) console.error(error)
     console.log('success!');
 })
