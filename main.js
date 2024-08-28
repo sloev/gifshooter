@@ -1,6 +1,7 @@
 import kontra, { load } from 'kontra';
 import { joinRoom } from 'trystero'
 import QRCode from 'qrcode'
+import NoSleep from 'nosleep.js';
 
 let { init, Sprite, SpriteSheet, keyPressed, GameLoop, initKeys, pointerPressed, onInput, initPointer, getPointer } = kontra;
 
@@ -315,6 +316,8 @@ if (presentMode) {
     }
     let shootNow = false
     shootbuttoncanvas.ontouchstart = () => {
+        noSleep.enable();
+
         shootNow = true
     }
     shootbuttoncanvas.ontouchend = () => {
