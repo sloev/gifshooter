@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "kontra": "^10.0.2",
+    "nosleep.js": "^0.12.0",
     "qrcode": "^1.5.4",
     "rapid-render": "^0.0.4",
     "spritejs": "^3.8.3",
