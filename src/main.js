@@ -14,6 +14,8 @@ if (!code) {
 function showLanding() {
   const $ = (id) => document.getElementById(id)
   $('landing').hidden = false
+  const fun = ['❤️', '💖', '💘', '💝', '💜', '🧡', '💛', '💚', '💙', '🩷', '✨', '🌈', '🦄', '🍩', '🪐', '🔥', '👾', '🎉', '🍄', '🌀']
+  $('made-with').textContent = fun[Math.floor(Math.random() * fun.length)]
   const go = (url) => location.assign(url)
   try {
     $('join-code').value = localStorage.getItem('gifshooter:last') || ''

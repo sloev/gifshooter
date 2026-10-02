@@ -24,7 +24,8 @@ screen and phones need the same list).
 | `?c=<code>&present` | Present that canvas on a big screen |
 
 "New canvas with shortcode" picks a random 4-letter code. Named rooms use whatever
-name you type (lowercased). The presenter shows the code, the URL and a QR code at the top.
+name you type (lowercased). The presenter shows a small strip at the top with a QR code,
+the code and the URL.
 
 ## Present mode
 
@@ -39,7 +40,11 @@ name you type (lowercased). The presenter shows the code, the URL and a QR code 
   memory budget (256 MB, 128 MB on low-memory devices; override with `&budget=<MB>`).
 - Fading: the board fades faster when lots of painting is going on and slower when
   idle (half-life 8 s busy → 120 s idle). Fading stops once ~20% of the board is black.
-- Each painter's last cursor position is drawn on top and fades out over 10 seconds.
+- Every painter gets their own colour (the screen picks the hue furthest from the ones
+  already in use). Their cursor shows as a dot in that colour on the big screen, fading
+  out over 10 seconds, so you can paint while watching the wall.
+- Spritesheets load on first use; beyond ~160 MB decoded, the least recently used
+  ones that no live stroke needs are released.
 - `&debug` shows ring size, live stamp count, activity, black share and fade rate.
 
 ## Paint mode
@@ -48,22 +53,27 @@ Fullscreen trackpad (no accelerometer):
 
 - **one finger**: move the cursor and paint
 - **two fingers**: move the cursor without painting (stays move-only until all fingers lift)
-- **top-left ✕**: hold 5 s to leave and go back to code entry
-- **top-right gif**: hold 5 s to open the gif picker
+- **top-left ✕**: hold 2 s to leave and go back to code entry
+- **top-right gif**: hold 2 s to open the (animated) gif picker
+- the cursor and trail on the phone use your colour; you start with a random gif
 
 The hold delay is there so you can paint hands-free without leaving by accident.
 
 ## Gif library
 
-Source gifs live in `assets-src/` (`sprites/<name>.<frames>.png` strips and
-`gifs/*.gif`). `npm run build:sprites` trims them, caps them at 120 frames and 192 px,
-and packs each into a grid spritesheet (WebP with alpha) plus a thumbnail sheet
+Source gifs live in `assets-src/`: `sprites/<name>.<frames>.png` strips, `gifs/*.gif`,
+and `generated/`, which holds procedural loops (hearts, planets, abstract shapes, early-3D
+wireframes and flat shading, Blender-style iridescent blobs) rendered by
+`npm run generate:gifs` from `scripts/procedural/gifs.mjs`. `npm run build:sprites`
+trims them all, caps them at 120 frames and 192 px, and packs each into a grid
+spritesheet (WebP with alpha), plus an animated thumbnail sheet for the picker
 and `public/sprites/manifest.json`.
 
 ## Develop
 
 ```sh
 npm install
+npm run generate:gifs   # only after changing scripts/procedural/
 npm run build:sprites   # only after changing assets-src/
 npm run dev
 npm run build           # writes docs/ for GitHub Pages

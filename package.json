@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "build:sprites": "node scripts/build-sprites.mjs",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "generate:gifs": "node scripts/generate-gifs.mjs"
   },
   "devDependencies": {
     "sharp": "^0.35.5",
