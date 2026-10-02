@@ -74,6 +74,7 @@ and `public/sprites/manifest.json`.
 ```sh
 npm install
 npm run generate:gifs   # only after changing scripts/procedural/
+npm run generate:logo   # only after changing scripts/generate-logo.mjs
 npm run build:sprites   # only after changing assets-src/
 npm run dev
 npm run build           # writes docs/ for GitHub Pages

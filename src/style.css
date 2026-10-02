@@ -60,7 +60,7 @@ input {
   overflow-y: auto;
   height: 100%;
 }
-#landing .logo { width: min(340px, 88%); align-self: center; image-rendering: pixelated; margin: 8px 0; }
+#landing .logo { width: min(400px, 96%); height: auto; align-self: center; margin: 8px 0; }
 .card {
   background: var(--card);
   border: 1px solid var(--line);
