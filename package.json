@@ -1,22 +1,21 @@
 {
-  "name": "vite-project",
+  "name": "gifshooter",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build --base=/gifshooter/",
+    "build": "vite build",
+    "build:sprites": "node scripts/build-sprites.mjs",
     "preview": "vite preview"
   },
   "devDependencies": {
-    "vite": "^5.4.1"
+    "sharp": "^0.35.5",
+    "vite": "^8.3.2"
   },
   "dependencies": {
-    "kontra": "^10.0.2",
     "nosleep.js": "^0.12.0",
     "qrcode": "^1.5.4",
-    "rapid-render": "^0.0.4",
-    "spritejs": "^3.8.3",
-    "trystero": "^0.20.0"
+    "trystero": "^0.25.4"
   }
 }
