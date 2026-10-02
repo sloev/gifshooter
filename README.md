@@ -31,6 +31,10 @@ name you type (lowercased). The presenter shows the code, the URL and a QR code 
 - The board is a loop of up to 120 frames (the length of the longest gif in the
   library, capped at 120) played at 15 fps. Each stamped gif is written frame-by-frame into
   every slot of the loop, so the whole board animates.
+- Strokes are smoothed and stamped densely, so a drag leaves one continuous "worm".
+  Each stamp along the stroke runs one gif frame behind the previous one, so the
+  animation ripples along the worm from tail to head. New stamps show up at display
+  rate (the phone sends its cursor at ~60 Hz), not in 15 fps steps.
 - Loop frames are allocated once and reused. Their resolution is picked to fit a
   memory budget (256 MB, 128 MB on low-memory devices; override with `&budget=<MB>`).
 - Fading: the board fades faster when lots of painting is going on and slower when

@@ -6,8 +6,9 @@ import { painterUrl } from './rooms.js'
 const TICK_MS = 1000 / FPS
 const MARKER_MS = 10_000 // painter cursors fade out over this long
 const STAMP_SIZE = 0.16 // stamp size, as a share of the board's shorter side
-const STAMP_SPACING = 0.3 // min distance between stamps in a stroke, as a share of stamp size
-const MAX_ACTIVE_STAMPS = 2500 // hard cap on stamps still being written into the ring
+const STAMP_SPACING = 0.1 // distance between stamps along a stroke, as a share of stamp size
+const MAX_STAMPS_PER_MOVE = 48 // interpolation cap for one cursor update
+const MAX_ACTIVE_STAMPS = 4000 // hard cap on stamps still being written into the ring
 const MAX_WAITING_STAMPS = 400 // stamps parked while their spritesheet downloads
 const BLACK_TARGET = 0.2 // stop fading once this share of the board is black
 const BLACK_LEVEL = 28 // a pixel counts as black when its brightest channel is below this
@@ -136,17 +137,21 @@ export async function startPresent(code) {
   let tick = clockTick() - 1
   const stamps = []
   let head = 0
-  let lastT0 = 0
   let waiting = []
   let stampsThisWindow = 0
 
-  function addStamp(a, x, y) {
+  // `ph` is the stamp's index within its stroke. Each stamp runs one gif frame behind
+  // the one before it, so the animation ripples along the stroke from tail to head.
+  function addStamp(a, x, y, ph) {
     if (!a.bitmap) {
-      if (waiting.length < MAX_WAITING_STAMPS) waiting.push({ a, x, y })
+      if (waiting.length < MAX_WAITING_STAMPS) waiting.push({ a, x, y, ph })
       return
     }
-    lastT0 = Math.max(clockTick() + 1, lastT0)
-    stamps.push({ t0: lastT0, a, x, y })
+    // Land in the slot on screen right now and draw it immediately, so strokes grow at
+    // display rate instead of in 15 fps steps. The remaining slots follow in prepareSlot.
+    const s = { t0: tick, a, x, y, ph }
+    stamps.push(s)
+    drawStamp(ring.slot(tick).ctx, s, tick, STAMP_SIZE * Math.min(ring.width, ring.height))
     stampsThisWindow++
     if (stamps.length - head > MAX_ACTIVE_STAMPS) head = stamps.length - MAX_ACTIVE_STAMPS
   }
@@ -154,7 +159,17 @@ export async function startPresent(code) {
   function flushWaiting() {
     const pending = waiting
     waiting = []
-    for (const s of pending) addStamp(s.a, s.x, s.y)
+    for (const s of pending) addStamp(s.a, s.x, s.y, s.ph)
+  }
+
+  function drawStamp(ctx, s, t, size) {
+    const sp = s.a.sprite
+    const scale = size / Math.max(sp.w, sp.h)
+    const w = sp.w * scale
+    const h = sp.h * scale
+    const f = (((t - s.t0 - s.ph) % sp.frames) + sp.frames) % sp.frames
+    const [sx, sy, sw, sh] = frameRect(sp, f)
+    ctx.drawImage(s.a.bitmap, sx, sy, sw, sh, s.x * ring.width - w / 2, s.y * ring.height - h / 2, w, h)
   }
 
   // ---- fade control --------------------------------------------------------
@@ -202,19 +217,13 @@ export async function startPresent(code) {
     const size = STAMP_SIZE * Math.min(ring.width, ring.height)
     for (let i = head; i < stamps.length; i++) {
       const s = stamps[i]
-      const k = t - s.t0
-      if (k < 0) break
-      const sp = s.a.sprite
-      const scale = size / Math.max(sp.w, sp.h)
-      const w = sp.w * scale
-      const h = sp.h * scale
-      const [sx, sy, sw, sh] = frameRect(sp, k)
-      ctx.drawImage(s.a.bitmap, sx, sy, sw, sh, s.x * ring.width - w / 2, s.y * ring.height - h / 2, w, h)
+      if (s.t0 > t) break
+      drawStamp(ctx, s, t, size)
     }
   }
 
   // ---- painters ------------------------------------------------------------
-  const painters = new Map() // peerId -> { x, y, d, at, hue, a, stroke, lx, ly }
+  const painters = new Map() // peerId -> { x, y, d, at, hue, a, stroke, n, carry, mx, my, px, py }
 
   function onCursor(data, peerId) {
     if (!data || typeof data !== 'object') return
@@ -223,7 +232,7 @@ export async function startPresent(code) {
     if (!Number.isFinite(x) || !Number.isFinite(y)) return
     let p = painters.get(peerId)
     if (!p) {
-      p = { hue: hueOf(peerId), stroke: false, lx: x, ly: y }
+      p = { hue: hueOf(peerId), stroke: false, n: 0, carry: 0, mx: x, my: y, px: x, py: y }
       painters.set(peerId, p)
     }
     p.x = x
@@ -233,28 +242,54 @@ export async function startPresent(code) {
     p.a = (typeof data.s === 'string' && atlas(data.s)) || p.a
 
     if (!p.d || !p.a) {
+      if (p.stroke && p.a) strokeTo(p, p.px, p.py, p.px, p.py) // finish the tail
       p.stroke = false
       return
     }
     if (!p.stroke) {
       p.stroke = true
-      p.lx = x
-      p.ly = y
-      addStamp(p.a, x, y)
+      p.n = 0
+      p.carry = 0
+      p.mx = p.px = x
+      p.my = p.py = y
+      addStamp(p.a, x, y, p.n++)
       return
     }
-    // Interpolate along fast strokes so they stay continuous.
-    const spacing = STAMP_SPACING * STAMP_SIZE * Math.min(ring.width, ring.height)
-    const dx = (x - p.lx) * ring.width
-    const dy = (y - p.ly) * ring.height
-    const steps = Math.min(8, Math.floor(Math.hypot(dx, dy) / spacing))
-    if (steps < 1) return
-    for (let i = 1; i <= steps; i++) {
-      const f = i / steps
-      addStamp(p.a, p.lx + (x - p.lx) * f, p.ly + (y - p.ly) * f)
+    // Smooth the stroke: quadratic curve from the last midpoint, through the previous
+    // cursor point, to the new midpoint.
+    strokeTo(p, p.px, p.py, (p.px + x) / 2, (p.py + y) / 2)
+    p.px = x
+    p.py = y
+  }
+
+  // Walk the curve (mx,my) -> control (cx,cy) -> (ex,ey) in board pixels and drop a
+  // stamp every `spacing` pixels, carrying leftover distance into the next segment.
+  function strokeTo(p, cx, cy, ex, ey) {
+    const W = ring.width
+    const H = ring.height
+    const spacing = STAMP_SPACING * STAMP_SIZE * Math.min(W, H)
+    const x0 = p.mx * W, y0 = p.my * H, x1 = cx * W, y1 = cy * H, x2 = ex * W, y2 = ey * H
+    const approx = Math.hypot(x1 - x0, y1 - y0) + Math.hypot(x2 - x1, y2 - y1)
+    const n = Math.max(1, Math.ceil(approx / (spacing / 3)))
+    let lx = x0
+    let ly = y0
+    let budget = MAX_STAMPS_PER_MOVE
+    for (let i = 1; i <= n && budget > 0; i++) {
+      const t = i / n
+      const u = 1 - t
+      const qx = u * u * x0 + 2 * u * t * x1 + t * t * x2
+      const qy = u * u * y0 + 2 * u * t * y1 + t * t * y2
+      p.carry += Math.hypot(qx - lx, qy - ly)
+      lx = qx
+      ly = qy
+      if (p.carry >= spacing) {
+        p.carry = 0
+        addStamp(p.a, qx / W, qy / H, p.n++)
+        budget--
+      }
     }
-    p.lx = x
-    p.ly = y
+    p.mx = ex
+    p.my = ey
   }
 
   function drawMarkers(now) {

@@ -4,7 +4,7 @@ import { loadManifest, loadBitmap, frameRect, FPS } from './library.js'
 import { homeUrl } from './rooms.js'
 
 const HOLD_MS = 5000 // corner buttons must be held this long
-const SEND_MS = 33 // cursor updates to the screen, at most ~30/s
+const SEND_MS = 16 // cursor updates to the screen, at most ~60/s
 const DRAW_DELAY_MS = 90 // grace period for a second finger before one-finger drawing starts
 const GAIN = 1.1 // a slow swipe across the whole phone moves ~1.1 board widths
 const ACCEL = 0.9 // extra gain per px/ms of finger speed, like a laptop trackpad
