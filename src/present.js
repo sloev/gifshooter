@@ -8,7 +8,7 @@ const MARKER_MS = 10_000 // painter cursors fade out over this long
 const STAMP_SIZE = 0.16 // stamp size, as a share of the board's shorter side
 const STAMP_SPACING = 0.1 // distance between stamps along a stroke, as a share of stamp size
 const MAX_STAMPS_PER_MOVE = 48 // interpolation cap for one cursor update
-const MAX_ACTIVE_STAMPS = 4000 // hard cap on stamps still being written into the ring
+const MAX_CATCH_UP = 4 // ticks processed per display frame; beyond that the loop slows down
 const MAX_WAITING_STAMPS = 400 // stamps parked while their spritesheet downloads
 const ATLAS_BUDGET = 160 * 1024 * 1024 // decoded spritesheets kept around (LRU beyond this)
 const BLACK_TARGET = 0.2 // stop fading once this share of the board is black
@@ -172,8 +172,13 @@ export async function startPresent(code) {
   }
 
   // ---- stamps: FIFO ordered by start tick ----------------------------------
-  const startTime = performance.now()
+  // Every stamp must land in every slot, or frames of the loop disagree and the board
+  // flickers between them. So the ring never skips slots: when the page falls behind
+  // (slow device, hidden tab) the clock is pushed back and the loop briefly slows.
+  let startTime = performance.now()
   const clockTick = () => Math.floor((performance.now() - startTime) / TICK_MS)
+  // Stamps still being written into the ring; above this they are finished off early.
+  const MAX_ACTIVE = SOFTWARE ? 1500 : 4000
   let tick = clockTick() - 1
   const stamps = []
   let head = 0
@@ -194,7 +199,20 @@ export async function startPresent(code) {
     a.refs++
     drawStamp(ring.slot(tick).ctx, s, tick, STAMP_SIZE * Math.min(ring.width, ring.height))
     stampsThisWindow++
-    while (stamps.length - head > MAX_ACTIVE_STAMPS) stamps[head++].a.refs--
+    while (stamps.length - head > MAX_ACTIVE) retire(stamps[head++])
+  }
+
+  // Write a stamp into all the slots it hasn't reached yet, then let it go.
+  function retire(s) {
+    const size = STAMP_SIZE * Math.min(ring.width, ring.height)
+    for (let t = tick + 1; t < s.t0 + ringLength; t++) drawStamp(ring.slot(t).ctx, s, t, size)
+    s.a.refs--
+  }
+
+  // Spread stamps out as the ring fills up, so busy boards stay under MAX_ACTIVE.
+  const spacingScale = () => {
+    const load = (stamps.length - head) / MAX_ACTIVE
+    return load < 0.4 ? 1 : 1 + ((load - 0.4) / 0.6) * 4
   }
 
   function flushWaiting() {
@@ -309,7 +327,7 @@ export async function startPresent(code) {
   function strokeTo(p, cx, cy, ex, ey) {
     const W = ring.width
     const H = ring.height
-    const spacing = STAMP_SPACING * STAMP_SIZE * Math.min(W, H)
+    const spacing = STAMP_SPACING * STAMP_SIZE * Math.min(W, H) * spacingScale()
     const x0 = p.mx * W, y0 = p.my * H, x1 = cx * W, y1 = cy * H, x2 = ex * W, y2 = ey * H
     const approx = Math.hypot(x1 - x0, y1 - y0) + Math.hypot(x2 - x1, y2 - y1)
     const n = Math.max(1, Math.ceil(approx / (spacing / 3)))
@@ -376,8 +394,9 @@ export async function startPresent(code) {
   let raf = 0
   function frame(now) {
     raf = requestAnimationFrame(frame)
-    const target = clockTick()
-    if (target - tick > ringLength) tick = target - ringLength // tab was hidden: skip ahead
+    const behind = clockTick() - tick
+    if (behind > MAX_CATCH_UP) startTime += (behind - MAX_CATCH_UP) * TICK_MS
+    const target = Math.min(clockTick(), tick + MAX_CATCH_UP)
     while (tick < target) prepareSlot(++tick)
     bctx.imageSmoothingEnabled = true
     bctx.drawImage(ring.slot(tick).canvas, 0, 0, board.width, board.height)
