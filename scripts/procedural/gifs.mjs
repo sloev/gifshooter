@@ -745,4 +745,107 @@ const blender = [
   },
 ]
 
-export const GIFS = [...hearts, ...planets, ...shapes, ...early, ...blender]
+// ---- weird ---------------------------------------------------------------------------------
+const sdEllipsoid = (x, y, z, a, b, c) => {
+  const k0 = Math.hypot(x / a, y / b, z / c)
+  const k1 = Math.hypot(x / (a * a), y / (b * b), z / (c * c))
+  return (k0 * (k0 - 1)) / (k1 || 1e-6)
+}
+const sdCapsule = (x, y, z, ax, ay, az, bx, by, bz, r) => {
+  const vx = bx - ax, vy = by - ay, vz = bz - az
+  const h = clamp(((x - ax) * vx + (y - ay) * vy + (z - az) * vz) / (vx * vx + vy * vy + vz * vz))
+  return Math.hypot(x - ax - vx * h, y - ay - vy * h, z - az - vz * h) - r
+}
+
+const weird = [
+  {
+    // Pink elephant on parade: marching on the spot, flapping ears, swaying curly
+    // trunk, jiggly body and hypnotic spiral eyes.
+    name: 'weird-pink-elephant',
+    frames: 48,
+    setup(t) {
+      const a = TAU * t
+      const bob = 0.04 * Math.sin(2 * a)
+      const jig = 1 + 0.035 * Math.sin(2 * a + 1)
+      const yaw = 0.55 + 0.18 * Math.sin(a)
+      const cy = Math.cos(yaw), sy = Math.sin(yaw)
+      const flap = 0.35 + 0.45 * Math.sin(2 * a)
+      const cf = Math.cos(flap), sf = Math.sin(flap)
+      // trunk: a chain of capsules swaying and curling up at the tip
+      const trunk = Array.from({ length: 8 }, (_, i) => {
+        const u = i / 7
+        return [
+          0.16 * Math.sin(a + u * 2.5) * u,
+          0.12 - 0.62 * u + 0.5 * u * u * u + 0.08 * Math.sin(a * 2 + u * 3) * u,
+          -0.62 - 0.22 * u + 0.18 * u * u * u,
+          0.12 * (1 - 0.55 * u),
+        ]
+      })
+      // legs march in diagonal pairs
+      const legs = [
+        [-0.27, -0.02, 0],
+        [0.27, 0.32, 0],
+        [0.27, -0.02, Math.PI],
+        [-0.27, 0.32, Math.PI],
+      ].map(([x, z, ph]) => [x, z, Math.max(0, Math.sin(a * 2 + ph)) * 0.14])
+      const eyes = [-0.15, 0.15].map((x) => [x, 0.36, -0.62])
+
+      const parts = (x0, y0, z0, out) => {
+        const x = x0 * cy + z0 * sy
+        const z = -x0 * sy + z0 * cy
+        const y = y0 - bob
+        const body = sdEllipsoid(x, y + 0.05, z - 0.15, 0.48 * jig, 0.4 / jig, 0.55)
+        const head = Math.hypot(x, y - 0.25, z + 0.33) - 0.34
+        let skin = smin(body, head, 0.16)
+        for (let i = 0; i < trunk.length - 1; i++) {
+          const p = trunk[i], q = trunk[i + 1]
+          skin = smin(skin, sdCapsule(x, y, z, p[0], p[1], p[2], q[0], q[1], q[2], p[3]), 0.06)
+        }
+        for (const [lx, lz, lift] of legs) skin = smin(skin, sdCapsule(x, y, z, lx, -0.2, lz, lx, -0.68 + lift, lz, 0.13), 0.08)
+        // ears: thin discs hinged at the sides of the head
+        let ears = Infinity
+        for (const side of [-1, 1]) {
+          let ex = x * side - 0.24
+          let ez = z + 0.26
+          const rx = ex * cf + ez * sf
+          const rz = -ex * sf + ez * cf
+          ears = Math.min(ears, sdEllipsoid(rx - 0.26, y - 0.3, rz, 0.3, 0.34, 0.045))
+        }
+        skin = smin(skin, ears, 0.05)
+        let eye = Infinity
+        for (const e of eyes) eye = Math.min(eye, Math.hypot(x - e[0], y - e[1], z - e[2]) - 0.085)
+        out[0] = skin
+        out[1] = eye
+        out[2] = x
+        out[3] = y
+        out[4] = z
+        return Math.min(skin, eye)
+      }
+      const o = [0, 0, 0, 0, 0]
+      const sdf = (x, y, z) => parts(x, y, z, o)
+      const shade = (h, c) => {
+        parts(h.x, h.y, h.z, o)
+        if (o[1] < o[0]) {
+          // hypnotic spiral eyes
+          const e = eyes[o[2] < 0 ? 0 : 1]
+          const dx = o[2] - e[0], dy = o[3] - e[1]
+          const v = fract(Math.atan2(dy, dx) / TAU + Math.hypot(dx, dy) * 18 - a / TAU * 3)
+          const k = v < 0.5 ? 1 : 0.05
+          set(c, k, k * 0.9, k)
+          light(h, c, { spec: 1.2, shine: 80, amb: 0.6 })
+          return
+        }
+        // shimmering bubblegum skin with drifting polka dots
+        const n = noise3(o[2] * 7 + Math.cos(a) * 0.6, o[3] * 7, o[4] * 7 + Math.sin(a) * 0.6)
+        hsv(0.92 + 0.04 * Math.sin(a + o[3] * 4), 0.42 + 0.1 * n, 1, c)
+        const dot = smoothstep(0.62, 0.66, noise3(o[2] * 9 + 3, o[3] * 9 + Math.sin(a) * 0.8, o[4] * 9 + Math.cos(a) * 0.8))
+        hsv(0.82, 0.55, 1, tmp)
+        for (let i = 0; i < 3; i++) c[i] = mix(c[i], tmp[i], dot * 0.8)
+        light(h, c, { spec: 0.7, shine: 35, rim: 0.5, amb: 0.4 })
+      }
+      return (x, y, out) => raymarch(sdf, x, y, out, shade, { bound: 1.25, steps: 150 })
+    },
+  },
+]
+
+export const GIFS = [...hearts, ...planets, ...shapes, ...early, ...blender, ...weird]
