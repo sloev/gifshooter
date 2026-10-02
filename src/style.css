@@ -164,15 +164,6 @@ input {
   border: 2px solid transparent;
   background-color: #0d1513;
   background-repeat: no-repeat;
-  background-position: 0% var(--row);
-  animation: thumb-play 1s steps(var(--steps), jump-none) infinite;
-}
-@keyframes thumb-play {
-  from { background-position: 0% var(--row); }
-  to { background-position: 100% var(--row); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .thumb { animation: none; }
 }
 .thumb.selected { border-color: var(--accent); }
 

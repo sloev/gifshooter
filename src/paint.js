@@ -3,7 +3,7 @@ import { connect } from './net.js'
 import { loadManifest, loadBitmap, frameRect, FPS } from './library.js'
 import { homeUrl } from './rooms.js'
 
-const HOLD_MS = 2000 // corner buttons must be held this long
+const HOLD_MS = 1000 // corner buttons must be held this long
 const SEND_MS = 16 // cursor updates to the screen, at most ~60/s
 const DRAW_DELAY_MS = 90 // grace period for a second finger before one-finger drawing starts
 const GAIN = 1.1 // a slow swipe across the whole phone moves ~1.1 board widths
@@ -243,8 +243,8 @@ export async function startPaint(code) {
   const picker = $('picker')
   const grid = $('picker-grid')
   const thumbsUrl = new URL(`./sprites/${manifest.thumbs.file}`, location.href).href
-  // Thumbnail sheet: one row per gif, `frames` columns. CSS steps through the columns,
-  // so the whole grid animates from a single small image.
+  // Thumbnail sheet: one row per gif, `frames` columns. A small loop steps every cell
+  // through its row while the picker is open, so the whole grid animates from one image.
   const thumbFrames = manifest.thumbs.frames
   const rows = sprites.length
   const cells = sprites.map((sprite, i) => {
@@ -252,9 +252,7 @@ export async function startPaint(code) {
     cell.className = 'thumb'
     cell.setAttribute('aria-label', `gif ${i + 1}`)
     cell.style.backgroundSize = `${thumbFrames * 100}% ${rows * 100}%`
-    cell.style.setProperty('--row', `${rows > 1 ? (i / (rows - 1)) * 100 : 0}%`)
-    cell.style.setProperty('--steps', thumbFrames)
-    cell.style.animationDuration = `${Math.max(0.6, sprite.frames / FPS).toFixed(2)}s`
+    cell.style.backgroundPosition = `0% ${rows > 1 ? (i / (rows - 1)) * 100 : 0}%`
     cell.onclick = () => {
       if (justOpened()) return
       selectSprite(sprite.id)
@@ -263,6 +261,22 @@ export async function startPaint(code) {
     grid.append(cell)
     return cell
   })
+
+  // Each thumbnail plays at its gif's own speed: its 12 frames span the whole loop.
+  const shown = new Int8Array(cells.length).fill(-1)
+  let thumbRaf = 0
+  function animateThumbs(now) {
+    thumbRaf = requestAnimationFrame(animateThumbs)
+    for (let i = 0; i < cells.length; i++) {
+      const loopMs = (sprites[i].frames / FPS) * 1000
+      const f = Math.floor(((now % loopMs) / loopMs) * thumbFrames)
+      if (f === shown[i]) continue
+      shown[i] = f
+      const x = thumbFrames > 1 ? (f / (thumbFrames - 1)) * 100 : 0
+      const y = rows > 1 ? (i / (rows - 1)) * 100 : 0
+      cells[i].style.backgroundPosition = `${x}% ${y}%`
+    }
+  }
 
   function selectSprite(id) {
     spriteId = id
@@ -283,10 +297,13 @@ export async function startPaint(code) {
     setDrawing(false)
     cells.forEach((c, i) => c.classList.toggle('selected', sprites[i].id === spriteId))
     picker.hidden = false
+    cancelAnimationFrame(thumbRaf)
+    thumbRaf = requestAnimationFrame(animateThumbs)
     cells[sprites.findIndex((s) => s.id === spriteId)]?.scrollIntoView({ block: 'center' })
   }
   function closePicker() {
     picker.hidden = true
+    cancelAnimationFrame(thumbRaf)
   }
   $('picker-close').onclick = () => justOpened() || closePicker()
 

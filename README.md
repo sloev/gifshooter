@@ -53,8 +53,8 @@ Fullscreen trackpad (no accelerometer):
 
 - **one finger**: move the cursor and paint
 - **two fingers**: move the cursor without painting (stays move-only until all fingers lift)
-- **top-left ✕**: hold 2 s to leave and go back to code entry
-- **top-right gif**: hold 2 s to open the (animated) gif picker
+- **top-left ✕**: hold 1 s to leave and go back to code entry
+- **top-right gif**: hold 1 s to open the (animated) gif picker
 - the cursor and trail on the phone use your colour; you start with a random gif
 
 The hold delay is there so you can paint hands-free without leaving by accident.
