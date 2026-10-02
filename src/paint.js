@@ -3,8 +3,8 @@ import { connect } from './net.js'
 import { loadManifest, loadBitmap, frameRect, FPS } from './library.js'
 import { homeUrl } from './rooms.js'
 
-const HOLD_MS = 5000 // corner buttons must be held this long
-const SEND_MS = 33 // cursor updates to the screen, at most ~30/s
+const HOLD_MS = 2000 // corner buttons must be held this long
+const SEND_MS = 16 // cursor updates to the screen, at most ~60/s
 const DRAW_DELAY_MS = 90 // grace period for a second finger before one-finger drawing starts
 const GAIN = 1.1 // a slow swipe across the whole phone moves ~1.1 board widths
 const ACCEL = 0.9 // extra gain per px/ms of finger speed, like a laptop trackpad
@@ -13,35 +13,22 @@ const TRAIL = 256 // recent points shown on the phone's minimap
 
 const $ = (id) => document.getElementById(id)
 const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v)
-const store = {
-  get: (k) => {
-    try {
-      return localStorage.getItem(k)
-    } catch {
-      return null
-    }
-  },
-  set: (k, v) => {
-    try {
-      localStorage.setItem(k, v)
-    } catch {}
-  },
-}
 
 export async function startPaint(code) {
   $('paint').hidden = false
   document.title = `gifshooter · ${code}`
-  store.set('gifshooter:last', code)
 
   const manifest = await loadManifest()
   const sprites = manifest.sprites
-  let spriteId = store.get('gifshooter:sprite')
-  if (!manifest.byId.has(spriteId)) spriteId = sprites[Math.floor(Math.random() * sprites.length)].id
+  // Always start with a random gif.
+  let spriteId = sprites[Math.floor(Math.random() * sprites.length)].id
 
   // ---- network -------------------------------------------------------------
   const { room, hello, cursor } = connect(code)
   const screens = new Set()
   let aspect = 16 / 9 // of the presenting screen; updated from its hello
+  let hue = null // this painter's colour, handed out by the first screen we meet
+  const color = (a = 1) => (hue === null ? `rgba(127,255,212,${a})` : `hsla(${hue},95%,62%,${a})`)
 
   const status = $('paint-status')
   const updateStatus = () => {
@@ -55,6 +42,11 @@ export async function startPaint(code) {
     if (data?.role !== 'screen') return
     screens.add(peerId)
     if (Number.isFinite(data.aspect) && data.aspect > 0.2 && data.aspect < 5) aspect = data.aspect
+    if (hue === null && Number.isFinite(data.hue)) {
+      hue = ((Math.round(data.hue) % 360) + 360) % 360
+      document.documentElement.style.setProperty('--me', color())
+      forceSend = true
+    }
     updateStatus()
     dirty = true
   }
@@ -96,6 +88,7 @@ export async function startPaint(code) {
     forceSend = false
     if (!screens.size) return
     const msg = { x: Math.round(pos.x * 1e4) / 1e4, y: Math.round(pos.y * 1e4) / 1e4, d: drawing, s: spriteId }
+    if (hue !== null) msg.h = hue
     cursor.send(msg, { target: [...screens] }).catch(() => {})
   }
 
@@ -250,17 +243,18 @@ export async function startPaint(code) {
   const picker = $('picker')
   const grid = $('picker-grid')
   const thumbsUrl = new URL(`./sprites/${manifest.thumbs.file}`, location.href).href
-  const thumbCols = manifest.thumbs.cols
-  const thumbRows = Math.ceil(sprites.length / thumbCols)
+  // Thumbnail sheet: one row per gif, `frames` columns. CSS steps through the columns,
+  // so the whole grid animates from a single small image.
+  const thumbFrames = manifest.thumbs.frames
+  const rows = sprites.length
   const cells = sprites.map((sprite, i) => {
     const cell = document.createElement('button')
     cell.className = 'thumb'
     cell.setAttribute('aria-label', `gif ${i + 1}`)
-    const col = i % thumbCols
-    const row = Math.floor(i / thumbCols)
-    cell.style.backgroundImage = `url("${thumbsUrl}")`
-    cell.style.backgroundSize = `${thumbCols * 100}% ${thumbRows * 100}%`
-    cell.style.backgroundPosition = `${thumbCols > 1 ? (col / (thumbCols - 1)) * 100 : 0}% ${thumbRows > 1 ? (row / (thumbRows - 1)) * 100 : 0}%`
+    cell.style.backgroundSize = `${thumbFrames * 100}% ${rows * 100}%`
+    cell.style.setProperty('--row', `${rows > 1 ? (i / (rows - 1)) * 100 : 0}%`)
+    cell.style.setProperty('--steps', thumbFrames)
+    cell.style.animationDuration = `${Math.max(0.6, sprite.frames / FPS).toFixed(2)}s`
     cell.onclick = () => {
       if (justOpened()) return
       selectSprite(sprite.id)
@@ -272,7 +266,6 @@ export async function startPaint(code) {
 
   function selectSprite(id) {
     spriteId = id
-    store.set('gifshooter:sprite', id)
     loadPreview(id)
     dirty = true
     forceSend = true
@@ -283,6 +276,8 @@ export async function startPaint(code) {
   const justOpened = () => performance.now() - pickerOpenedAt < 600
   function openPicker() {
     pickerOpenedAt = performance.now()
+    // The thumbnail sheet is only downloaded the first time the picker opens.
+    if (!cells[0].style.backgroundImage) for (const c of cells) c.style.backgroundImage = `url("${thumbsUrl}")`
     touches.clear()
     mode = 'idle'
     setDrawing(false)
@@ -319,14 +314,14 @@ export async function startPaint(code) {
     }
     const bx = (W - bw) / 2
     const by = (H - bh) / 2
-    ctx.strokeStyle = 'rgba(127,255,212,0.25)'
+    ctx.strokeStyle = color(0.3)
     ctx.lineWidth = 2
     ctx.strokeRect(bx, by, bw, bh)
 
     for (let i = 0; i < TRAIL; i++) {
       const j = ((trailHead + i) % TRAIL) * 3
       if (!trail[j + 2]) continue
-      ctx.fillStyle = `rgba(127,255,212,${(0.08 + (0.4 * i) / TRAIL).toFixed(3)})`
+      ctx.fillStyle = color((0.12 + (0.55 * i) / TRAIL).toFixed(3))
       ctx.fillRect(bx + trail[j] * bw - 2, by + trail[j + 1] * bh - 2, 4, 4)
     }
 
@@ -336,10 +331,10 @@ export async function startPaint(code) {
     ctx.beginPath()
     ctx.arc(cx, cy, r, 0, Math.PI * 2)
     ctx.lineWidth = 3
-    ctx.strokeStyle = 'aquamarine'
+    ctx.strokeStyle = color()
     ctx.stroke()
     if (drawing) {
-      ctx.fillStyle = 'aquamarine'
+      ctx.fillStyle = color()
       ctx.fill()
     }
   }

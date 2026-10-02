@@ -12,7 +12,7 @@ export const normalizeCode = (raw) =>
     .replace(/[^a-z0-9-]/g, '')
     .slice(0, 24)
 
-export function randomCode(length = 4) {
+export function randomCode(length = 5) {
   const bytes = crypto.getRandomValues(new Uint8Array(length))
   return Array.from(bytes, (b) => CODE_ALPHABET[b % CODE_ALPHABET.length]).join('')
 }

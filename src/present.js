@@ -6,9 +6,11 @@ import { painterUrl } from './rooms.js'
 const TICK_MS = 1000 / FPS
 const MARKER_MS = 10_000 // painter cursors fade out over this long
 const STAMP_SIZE = 0.16 // stamp size, as a share of the board's shorter side
-const STAMP_SPACING = 0.3 // min distance between stamps in a stroke, as a share of stamp size
-const MAX_ACTIVE_STAMPS = 2500 // hard cap on stamps still being written into the ring
+const STAMP_SPACING = 0.1 // distance between stamps along a stroke, as a share of stamp size
+const MAX_STAMPS_PER_MOVE = 48 // interpolation cap for one cursor update
+const MAX_ACTIVE_STAMPS = 4000 // hard cap on stamps still being written into the ring
 const MAX_WAITING_STAMPS = 400 // stamps parked while their spritesheet downloads
+const ATLAS_BUDGET = 160 * 1024 * 1024 // decoded spritesheets kept around (LRU beyond this)
 const BLACK_TARGET = 0.2 // stop fading once this share of the board is black
 const BLACK_LEVEL = 28 // a pixel counts as black when its brightest channel is below this
 const FADE_HALF_LIFE_IDLE = 120 // seconds, when nobody is drawing
@@ -81,7 +83,7 @@ export async function startPresent(code) {
   const url = painterUrl(code)
   $('present-code').textContent = code
   $('present-url').textContent = url.replace(/^https?:\/\//, '')
-  QRCode.toCanvas($('qr'), url, { margin: 1, width: 168, color: { dark: '#000', light: '#fff' } }).catch(console.error)
+  QRCode.toCanvas($('qr'), url, { margin: 2, width: 240, color: { dark: '#000', light: '#fff' } }).catch(console.error)
 
   const manifest = await loadManifest()
   const ringLength = Math.min(MAX_RING_FRAMES, Math.max(...manifest.sprites.map((s) => s.frames)))
@@ -106,29 +108,49 @@ export async function startPresent(code) {
   }
   layout()
 
-  // ---- spritesheets (loaded on first use, then kept) -----------------------
+  // ---- spritesheets (loaded on first use, least recently used evicted) -----
+  // `refs` counts live stamps still being written into the ring; those sheets stay.
   const atlases = new Map()
+  let atlasBytes = 0
   function atlas(id) {
     let a = atlases.get(id)
     if (!a) {
       const sprite = manifest.byId.get(id)
       if (!sprite) return null
-      a = { sprite, bitmap: null }
+      a = { sprite, bitmap: null, refs: 0, used: 0, bytes: 0 }
       atlases.set(id, a)
       loadBitmap(sprite.file)
         .then((bitmap) => {
+          if (atlases.get(id) !== a) return bitmap.close()
           a.bitmap = bitmap
+          a.bytes = bitmap.width * bitmap.height * 4
+          atlasBytes += a.bytes
           flushWaiting()
+          evictAtlases()
         })
         .catch((err) => {
           console.error(err)
           atlases.delete(id)
         })
     }
+    a.used = performance.now()
     return a
   }
-  let thumbs = null
-  loadBitmap(manifest.thumbs.file).then((b) => (thumbs = b), console.error)
+  function evictAtlases() {
+    while (atlasBytes > ATLAS_BUDGET) {
+      let victim = null
+      for (const a of atlases.values()) {
+        if (!a.bitmap || a.refs > 0) continue
+        let held = false
+        for (const p of painters.values()) if (p.a === a) held = true
+        if (!held && (!victim || a.used < victim.used)) victim = a
+      }
+      if (!victim) return
+      victim.bitmap.close()
+      atlasBytes -= victim.bytes
+      atlases.delete(victim.sprite.id)
+    }
+  }
 
   // ---- stamps: FIFO ordered by start tick ----------------------------------
   const startTime = performance.now()
@@ -136,25 +158,40 @@ export async function startPresent(code) {
   let tick = clockTick() - 1
   const stamps = []
   let head = 0
-  let lastT0 = 0
   let waiting = []
   let stampsThisWindow = 0
 
-  function addStamp(a, x, y) {
+  // `ph` is the stamp's index within its stroke. Each stamp runs one gif frame behind
+  // the one before it, so the animation ripples along the stroke from tail to head.
+  function addStamp(a, x, y, ph) {
     if (!a.bitmap) {
-      if (waiting.length < MAX_WAITING_STAMPS) waiting.push({ a, x, y })
+      if (waiting.length < MAX_WAITING_STAMPS) waiting.push({ a, x, y, ph })
       return
     }
-    lastT0 = Math.max(clockTick() + 1, lastT0)
-    stamps.push({ t0: lastT0, a, x, y })
+    // Land in the slot on screen right now and draw it immediately, so strokes grow at
+    // display rate instead of in 15 fps steps. The remaining slots follow in prepareSlot.
+    const s = { t0: tick, a, x, y, ph }
+    stamps.push(s)
+    a.refs++
+    drawStamp(ring.slot(tick).ctx, s, tick, STAMP_SIZE * Math.min(ring.width, ring.height))
     stampsThisWindow++
-    if (stamps.length - head > MAX_ACTIVE_STAMPS) head = stamps.length - MAX_ACTIVE_STAMPS
+    while (stamps.length - head > MAX_ACTIVE_STAMPS) stamps[head++].a.refs--
   }
 
   function flushWaiting() {
     const pending = waiting
     waiting = []
-    for (const s of pending) addStamp(s.a, s.x, s.y)
+    for (const s of pending) addStamp(s.a, s.x, s.y, s.ph)
+  }
+
+  function drawStamp(ctx, s, t, size) {
+    const sp = s.a.sprite
+    const scale = size / Math.max(sp.w, sp.h)
+    const w = sp.w * scale
+    const h = sp.h * scale
+    const f = (((t - s.t0 - s.ph) % sp.frames) + sp.frames) % sp.frames
+    const [sx, sy, sw, sh] = frameRect(sp, f)
+    ctx.drawImage(s.a.bitmap, sx, sy, sw, sh, s.x * ring.width - w / 2, s.y * ring.height - h / 2, w, h)
   }
 
   // ---- fade control --------------------------------------------------------
@@ -194,7 +231,7 @@ export async function startPresent(code) {
       ctx.fillRect(0, 0, ring.width, ring.height)
       slotFade[i] = fadeTotal
     }
-    while (head < stamps.length && stamps[head].t0 <= t - ringLength) head++
+    while (head < stamps.length && stamps[head].t0 <= t - ringLength) stamps[head++].a.refs--
     if (head > 1024 && head * 2 > stamps.length) {
       stamps.splice(0, head)
       head = 0
@@ -202,19 +239,13 @@ export async function startPresent(code) {
     const size = STAMP_SIZE * Math.min(ring.width, ring.height)
     for (let i = head; i < stamps.length; i++) {
       const s = stamps[i]
-      const k = t - s.t0
-      if (k < 0) break
-      const sp = s.a.sprite
-      const scale = size / Math.max(sp.w, sp.h)
-      const w = sp.w * scale
-      const h = sp.h * scale
-      const [sx, sy, sw, sh] = frameRect(sp, k)
-      ctx.drawImage(s.a.bitmap, sx, sy, sw, sh, s.x * ring.width - w / 2, s.y * ring.height - h / 2, w, h)
+      if (s.t0 > t) break
+      drawStamp(ctx, s, t, size)
     }
   }
 
   // ---- painters ------------------------------------------------------------
-  const painters = new Map() // peerId -> { x, y, d, at, hue, a, stroke, lx, ly }
+  const painters = new Map() // peerId -> { x, y, d, at, hue, a, stroke, n, carry, mx, my, px, py }
 
   function onCursor(data, peerId) {
     if (!data || typeof data !== 'object') return
@@ -223,74 +254,101 @@ export async function startPresent(code) {
     if (!Number.isFinite(x) || !Number.isFinite(y)) return
     let p = painters.get(peerId)
     if (!p) {
-      p = { hue: hueOf(peerId), stroke: false, lx: x, ly: y }
+      p = { hue: hues.get(peerId) ?? hueOf(peerId), stroke: false, n: 0, carry: 0, mx: x, my: y, px: x, py: y }
       painters.set(peerId, p)
     }
     p.x = x
     p.y = y
+    if (Number.isFinite(data.h)) p.hue = ((Math.round(data.h) % 360) + 360) % 360 // the painter's own colour
     p.d = !!data.d
     p.at = performance.now()
     p.a = (typeof data.s === 'string' && atlas(data.s)) || p.a
 
     if (!p.d || !p.a) {
+      if (p.stroke && p.a) strokeTo(p, p.px, p.py, p.px, p.py) // finish the tail
       p.stroke = false
       return
     }
     if (!p.stroke) {
       p.stroke = true
-      p.lx = x
-      p.ly = y
-      addStamp(p.a, x, y)
+      p.n = 0
+      p.carry = 0
+      p.mx = p.px = x
+      p.my = p.py = y
+      addStamp(p.a, x, y, p.n++)
       return
     }
-    // Interpolate along fast strokes so they stay continuous.
-    const spacing = STAMP_SPACING * STAMP_SIZE * Math.min(ring.width, ring.height)
-    const dx = (x - p.lx) * ring.width
-    const dy = (y - p.ly) * ring.height
-    const steps = Math.min(8, Math.floor(Math.hypot(dx, dy) / spacing))
-    if (steps < 1) return
-    for (let i = 1; i <= steps; i++) {
-      const f = i / steps
-      addStamp(p.a, p.lx + (x - p.lx) * f, p.ly + (y - p.ly) * f)
-    }
-    p.lx = x
-    p.ly = y
+    // Smooth the stroke: quadratic curve from the last midpoint, through the previous
+    // cursor point, to the new midpoint.
+    strokeTo(p, p.px, p.py, (p.px + x) / 2, (p.py + y) / 2)
+    p.px = x
+    p.py = y
   }
 
+  // Walk the curve (mx,my) -> control (cx,cy) -> (ex,ey) in board pixels and drop a
+  // stamp every `spacing` pixels, carrying leftover distance into the next segment.
+  function strokeTo(p, cx, cy, ex, ey) {
+    const W = ring.width
+    const H = ring.height
+    const spacing = STAMP_SPACING * STAMP_SIZE * Math.min(W, H)
+    const x0 = p.mx * W, y0 = p.my * H, x1 = cx * W, y1 = cy * H, x2 = ex * W, y2 = ey * H
+    const approx = Math.hypot(x1 - x0, y1 - y0) + Math.hypot(x2 - x1, y2 - y1)
+    const n = Math.max(1, Math.ceil(approx / (spacing / 3)))
+    let lx = x0
+    let ly = y0
+    let budget = MAX_STAMPS_PER_MOVE
+    for (let i = 1; i <= n && budget > 0; i++) {
+      const t = i / n
+      const u = 1 - t
+      const qx = u * u * x0 + 2 * u * t * x1 + t * t * x2
+      const qy = u * u * y0 + 2 * u * t * y1 + t * t * y2
+      p.carry += Math.hypot(qx - lx, qy - ly)
+      lx = qx
+      ly = qy
+      if (p.carry >= spacing) {
+        p.carry = 0
+        addStamp(p.a, qx / W, qy / H, p.n++)
+        budget--
+      }
+    }
+    p.mx = ex
+    p.my = ey
+  }
+
+  // Each painter's cursor: a dot in their colour, fading out over MARKER_MS.
   function drawMarkers(now) {
     const sx = board.width
     const sy = board.height
-    const r = Math.max(10, Math.min(sx, sy) * 0.018)
+    const r = Math.max(9, Math.min(sx, sy) * 0.016)
     for (const [id, p] of painters) {
       const age = now - p.at
       if (age > MARKER_MS) {
         painters.delete(id)
         continue
       }
-      const alpha = 1 - age / MARKER_MS
       const x = p.x * sx
       const y = p.y * sy
-      bctx.globalAlpha = alpha
-      bctx.lineWidth = r * 0.28
-      bctx.strokeStyle = '#000'
+      const fill = `hsl(${p.hue} 95% 60%)`
+      bctx.globalAlpha = 1 - age / MARKER_MS
+      if (p.d && age < 500) {
+        bctx.beginPath()
+        bctx.arc(x, y, r * 1.9, 0, Math.PI * 2)
+        bctx.lineWidth = r * 0.35
+        bctx.strokeStyle = fill
+        bctx.stroke()
+      }
       bctx.beginPath()
       bctx.arc(x, y, r, 0, Math.PI * 2)
+      bctx.fillStyle = fill
+      bctx.fill()
+      bctx.lineWidth = r * 0.3
+      bctx.strokeStyle = 'rgba(0,0,0,0.8)'
       bctx.stroke()
-      bctx.lineWidth = r * 0.16
-      bctx.strokeStyle = `hsl(${p.hue} 95% 62%)`
+      bctx.beginPath()
+      bctx.arc(x, y, r * 1.15, 0, Math.PI * 2)
+      bctx.lineWidth = r * 0.12
+      bctx.strokeStyle = 'rgba(255,255,255,0.9)'
       bctx.stroke()
-      if (p.d && age < 500) {
-        bctx.fillStyle = `hsl(${p.hue} 95% 62%)`
-        bctx.beginPath()
-        bctx.arc(x, y, r * 0.35, 0, Math.PI * 2)
-        bctx.fill()
-      }
-      if (thumbs && p.a) {
-        const t = manifest.thumbs
-        const i = p.a.sprite.index
-        const ts = r * 2.2
-        bctx.drawImage(thumbs, (i % t.cols) * t.size, Math.floor(i / t.cols) * t.size, t.size, t.size, x + r * 0.9, y + r * 0.9, ts, ts)
-      }
     }
     bctx.globalAlpha = 1
   }
@@ -307,7 +365,7 @@ export async function startPresent(code) {
     drawMarkers(now)
     if (debug) {
       debug.textContent =
-        `ring ${ringLength}×${ring.width}×${ring.height} · stamps ${stamps.length - head} (+${waiting.length} waiting)` +
+        `ring ${ringLength}×${ring.width}×${ring.height} · stamps ${stamps.length - head} (+${waiting.length} waiting) · sheets ${(atlasBytes / 1048576).toFixed(0)}MB` +
         ` · ${activity.toFixed(1)}/s · black ${(blackShare * 100).toFixed(0)}% · fade ${halfLife ? `half-life ${halfLife.toFixed(0)}s` : 'off'}`
     }
   }
@@ -324,6 +382,25 @@ export async function startPresent(code) {
   const peers = new Set()
   const screens = new Set()
   const info = () => ({ role: 'screen', aspect: board.clientWidth / board.clientHeight, frames: ringLength })
+  const hues = new Map() // peerId -> colour this screen handed out
+  // Pick the hue furthest from every colour already in use, so painters stay distinct.
+  function pickHue() {
+    const used = [...hues.values()]
+    for (const p of painters.values()) used.push(p.hue)
+    if (!used.length) return Math.floor(Math.random() * 360)
+    let best = 0
+    let bestGap = -1
+    for (let h = 0; h < 360; h += 5) {
+      let gap = 180
+      for (const u of used) gap = Math.min(gap, Math.abs(((h - u + 540) % 360) - 180))
+      if (gap > bestGap) {
+        bestGap = gap
+        best = h
+      }
+    }
+    return best
+  }
+  const sendInfo = (peerId) => hello.send({ ...info(), hue: hues.get(peerId) }, { target: peerId }).catch(() => {})
   const updatePeers = () => {
     const n = peers.size - screens.size
     $('present-peers').textContent = `${n} painter${n === 1 ? '' : 's'}`
@@ -331,18 +408,23 @@ export async function startPresent(code) {
 
   room.onPeerJoin = (peerId) => {
     peers.add(peerId)
-    hello.send(info(), { target: peerId }).catch(() => {})
+    hues.set(peerId, pickHue())
+    sendInfo(peerId)
     updatePeers()
   }
   room.onPeerLeave = (peerId) => {
     peers.delete(peerId)
     screens.delete(peerId)
+    hues.delete(peerId)
     const p = painters.get(peerId)
     if (p) p.stroke = false
     updatePeers()
   }
   hello.onMessage = (data, { peerId }) => {
-    if (data?.role === 'screen') screens.add(peerId)
+    if (data?.role === 'screen') {
+      screens.add(peerId)
+      hues.delete(peerId)
+    }
     updatePeers()
   }
   cursor.onMessage = (data, { peerId }) => onCursor(data, peerId)
@@ -352,7 +434,7 @@ export async function startPresent(code) {
     clearTimeout(resizeTimer)
     resizeTimer = setTimeout(() => {
       layout()
-      hello.send(info()).catch(() => {})
+      for (const peerId of peers) sendInfo(peerId)
     }, 250)
   })
 
@@ -362,7 +444,6 @@ export async function startPresent(code) {
     room.leave()
     ring.dispose()
     for (const a of atlases.values()) a.bitmap?.close()
-    thumbs?.close()
   })
 }
 
