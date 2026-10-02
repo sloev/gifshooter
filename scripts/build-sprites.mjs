@@ -15,7 +15,8 @@ import path from 'node:path'
 
 const MAX_FRAMES = 120
 const MAX_SIDE = 192
-const THUMB = 96
+const THUMB = 72
+const THUMB_FRAMES = 12
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..')
 const OUT = path.join(ROOT, 'public/sprites')
 
@@ -105,24 +106,30 @@ async function buildAtlas(id, src) {
     .webp({ quality: 82, alphaQuality: 90, effort: 6, smartSubsample: true })
     .toFile(path.join(OUT, file))
 
-  // Middle frame as the picker thumbnail.
-  const thumb = await sharp(frames[Math.floor(n / 2)], { raw: { width: src.fw, height: src.fh, channels: 4 } })
-    .extract(box)
-    .resize(THUMB, THUMB, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
-    .png()
-    .toBuffer()
+  // A short, evenly subsampled loop for the animated picker thumbnails.
+  const thumb = await Promise.all(
+    Array.from({ length: THUMB_FRAMES }, (_, i) =>
+      sharp(frames[Math.floor((i * n) / THUMB_FRAMES)], { raw: { width: src.fw, height: src.fh, channels: 4 } })
+        .extract(box)
+        .resize(THUMB, THUMB, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+        .png()
+        .toBuffer(),
+    ),
+  )
 
   return { sprite: { id, file, frames: n, w, h, cols }, thumb }
 }
 
+// One row per sprite, one column per thumbnail frame.
 async function buildThumbs(thumbs) {
-  const cols = Math.ceil(Math.sqrt(thumbs.length))
-  const rows = Math.ceil(thumbs.length / cols)
-  await sharp({ create: { width: cols * THUMB, height: rows * THUMB, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } } })
-    .composite(thumbs.map((input, i) => ({ input, left: (i % cols) * THUMB, top: Math.floor(i / cols) * THUMB })))
-    .webp({ quality: 80, alphaQuality: 90, effort: 6 })
+  await sharp({
+    create: { width: THUMB_FRAMES * THUMB, height: thumbs.length * THUMB, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } },
+    limitInputPixels: false,
+  })
+    .composite(thumbs.flatMap((row, r) => row.map((input, c) => ({ input, left: c * THUMB, top: r * THUMB }))))
+    .webp({ quality: 78, alphaQuality: 85, effort: 6 })
     .toFile(path.join(OUT, 'thumbs.webp'))
-  return { file: 'thumbs.webp', size: THUMB, cols }
+  return { file: 'thumbs.webp', size: THUMB, frames: THUMB_FRAMES }
 }
 
 async function main() {
@@ -130,13 +137,16 @@ async function main() {
   await mkdir(OUT, { recursive: true })
   const built = []
 
-  const stripDir = path.join(ROOT, 'assets-src/sprites')
-  for (const name of (await readdir(stripDir)).sort()) {
-    const m = name.match(/^(.+)\.(\d+)\.png$/)
-    if (!m) continue
-    const id = `s${m[1]}-${m[2]}`
-    built.push(await buildAtlas(id, await framesFromStrip(path.join(stripDir, name), Number(m[2]))))
-    console.log('strip', name)
+  // Frame strips: the original library plus the procedural ones (scripts/generate-gifs.mjs).
+  for (const [dir, prefix] of [['assets-src/sprites', 's'], ['assets-src/generated', 'p-']]) {
+    const stripDir = path.join(ROOT, dir)
+    for (const name of (await readdir(stripDir)).sort()) {
+      const m = name.match(/^(.+)\.(\d+)\.png$/)
+      if (!m) continue
+      const id = prefix === 's' ? `s${m[1]}-${m[2]}` : `${prefix}${m[1]}`
+      built.push(await buildAtlas(id, await framesFromStrip(path.join(stripDir, name), Number(m[2]))))
+      console.log('strip', name)
+    }
   }
 
   const gifDir = path.join(ROOT, 'assets-src/gifs')

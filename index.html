@@ -13,8 +13,7 @@
   <body>
     <!-- Landing: pick a canvas to paint on, or present one -->
     <main id="landing" class="view" hidden>
-      <img class="logo" src="/logo.gif" alt="" />
-      <h1>gifshooter</h1>
+      <img class="logo" src="/logo.gif" alt="gifshooter" />
 
       <section class="card">
         <h2>Paint</h2>
@@ -34,7 +33,7 @@
         </form>
         <button id="present-public" class="secondary">Present the public canvas</button>
       </section>
-      <p class="fine">Peer-to-peer over WebRTC, signalled through public Nostr relays. No server of our own.</p>
+      <footer class="fine">made with <span id="made-with">❤️</span> by <a href="https://supernihil.github.io">supernihil.github.io</a></footer>
     </main>
 
     <!-- Present: the shared animated board -->
@@ -42,12 +41,11 @@
       <canvas id="board"></canvas>
       <header id="present-bar">
         <canvas id="qr"></canvas>
-        <div>
-          <div class="code-label">canvas code</div>
-          <div id="present-code" class="code"></div>
+        <div id="present-code" class="code"></div>
+        <div class="bar-meta">
           <div id="present-url" class="url"></div>
+          <div id="present-peers" class="peers">0 painters</div>
         </div>
-        <div id="present-peers" class="peers">0 painters</div>
       </header>
     </div>
 
