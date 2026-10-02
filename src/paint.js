@@ -251,7 +251,6 @@ export async function startPaint(code) {
     const cell = document.createElement('button')
     cell.className = 'thumb'
     cell.setAttribute('aria-label', `gif ${i + 1}`)
-    cell.style.backgroundImage = `url("${thumbsUrl}")`
     cell.style.backgroundSize = `${thumbFrames * 100}% ${rows * 100}%`
     cell.style.setProperty('--row', `${rows > 1 ? (i / (rows - 1)) * 100 : 0}%`)
     cell.style.setProperty('--steps', thumbFrames)
@@ -277,6 +276,8 @@ export async function startPaint(code) {
   const justOpened = () => performance.now() - pickerOpenedAt < 600
   function openPicker() {
     pickerOpenedAt = performance.now()
+    // The thumbnail sheet is only downloaded the first time the picker opens.
+    if (!cells[0].style.backgroundImage) for (const c of cells) c.style.backgroundImage = `url("${thumbsUrl}")`
     touches.clear()
     mode = 'idle'
     setDrawing(false)
