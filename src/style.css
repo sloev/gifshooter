@@ -114,6 +114,21 @@ a.button.secondary { color: var(--accent); }
 .bar-meta { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .url { font-size: 0.8rem; color: var(--fg); opacity: 0.85; overflow: hidden; text-overflow: ellipsis; }
 .peers { font-size: 0.72rem; color: var(--muted); }
+.fs-toggle {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 1px solid rgba(127, 255, 212, 0.35);
+  border-radius: 8px;
+  color: var(--accent);
+}
+.fs-toggle svg { fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.fs-toggle .fs-exit, .fs-toggle.on .fs-enter { display: none; }
+.fs-toggle.on .fs-exit { display: inline; }
 
 /* Paint */
 #paint { touch-action: none; background: #000; }

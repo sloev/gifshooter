@@ -468,6 +468,26 @@ export async function startPresent(code) {
   cursor.onMessage = (data, { peerId }) => onCursor(data, peerId)
 
   let resizeTimer = 0
+  // Fullscreen toggle in the header (hidden where the browser can't, e.g. iPhone Safari).
+  const fsButton = $('fullscreen')
+  const root = document.documentElement
+  const fsElement = () => document.fullscreenElement || document.webkitFullscreenElement
+  if (document.fullscreenEnabled || document.webkitFullscreenEnabled) {
+    fsButton.hidden = false
+    const sync = () => {
+      fsButton.classList.toggle('on', !!fsElement())
+      fsButton.title = fsElement() ? 'Exit fullscreen' : 'Fullscreen'
+    }
+    document.addEventListener('fullscreenchange', sync)
+    document.addEventListener('webkitfullscreenchange', sync)
+    fsButton.onclick = () => {
+      const done = fsElement()
+        ? (document.exitFullscreen || document.webkitExitFullscreen).call(document)
+        : (root.requestFullscreen || root.webkitRequestFullscreen).call(root, { navigationUI: 'hide' })
+      done?.catch?.(() => {})
+    }
+  }
+
   window.addEventListener('resize', () => {
     clearTimeout(resizeTimer)
     resizeTimer = setTimeout(() => {
