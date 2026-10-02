@@ -1,8 +1,9 @@
 // Converts the source gif library into compact grid spritesheets (WebP with alpha)
 // plus a manifest the app loads at runtime.
 //
-//   assets-src/sprites/<name>.<frames>.png  horizontal frame strips
-//   assets-src/gifs/<name>.gif              animated gifs
+//   assets-src/sprites/<name>.<frames>.<cols>.webp    lossless frame grids
+//   assets-src/generated/<name>.<frames>.<cols>.webp  same, from scripts/generate-gifs.mjs
+//   assets-src/gifs/<name>.gif                        animated gifs
 //
 // Output: public/sprites/<id>.webp + public/sprites/manifest.json
 //
@@ -27,12 +28,12 @@ const pickFrames = (count) => {
   return Array.from({ length: n }, (_, i) => Math.floor((i * count) / n))
 }
 
-async function framesFromStrip(file, count) {
+// A lossless grid of frames, `cols` per row, row-major.
+async function framesFromGrid(file, count, cols) {
   const img = sharp(file, { limitInputPixels: false })
   const { width, height } = await img.metadata()
-  const fw = Math.floor(width / count)
   const raw = await img.ensureAlpha().raw().toBuffer()
-  return { fw, fh: height, count, raw, stride: width }
+  return { fw: width / cols, fh: height / Math.ceil(count / cols), count, raw, stride: width, cols }
 }
 
 async function framesFromGif(file) {
@@ -42,14 +43,14 @@ async function framesFromGif(file) {
   const fw = meta.width
   // Animated gifs decode as a vertical strip of pages.
   const raw = await sharp(file, { animated: true }).ensureAlpha().raw().toBuffer()
-  return { fw, fh, count, raw, stride: fw, vertical: true }
+  return { fw, fh, count, raw, stride: fw }
 }
 
 function extractFrame(src, index) {
-  const { fw, fh, raw, stride, vertical } = src
+  const { fw, fh, raw, stride, cols = 1 } = src
   const out = Buffer.alloc(fw * fh * 4)
-  const x0 = vertical ? 0 : index * fw
-  const y0 = vertical ? index * fh : 0
+  const x0 = (index % cols) * fw
+  const y0 = Math.floor(index / cols) * fh
   for (let y = 0; y < fh; y++) {
     const from = ((y0 + y) * stride + x0) * 4
     raw.copy(out, y * fw * 4, from, from + fw * 4)
@@ -137,15 +138,15 @@ async function main() {
   await mkdir(OUT, { recursive: true })
   const built = []
 
-  // Frame strips: the original library plus the procedural ones (scripts/generate-gifs.mjs).
+  // Frame grids: the original library plus the procedural ones (scripts/generate-gifs.mjs).
   for (const [dir, prefix] of [['assets-src/sprites', 's'], ['assets-src/generated', 'p-']]) {
-    const stripDir = path.join(ROOT, dir)
-    for (const name of (await readdir(stripDir)).sort()) {
-      const m = name.match(/^(.+)\.(\d+)\.png$/)
+    const gridDir = path.join(ROOT, dir)
+    for (const name of (await readdir(gridDir)).sort()) {
+      const m = name.match(/^(.+)\.(\d+)\.(\d+)\.webp$/)
       if (!m) continue
       const id = prefix === 's' ? `s${m[1]}-${m[2]}` : `${prefix}${m[1]}`
-      built.push(await buildAtlas(id, await framesFromStrip(path.join(stripDir, name), Number(m[2]))))
-      console.log('strip', name)
+      built.push(await buildAtlas(id, await framesFromGrid(path.join(gridDir, name), Number(m[2]), Number(m[3]))))
+      console.log('grid ', name)
     }
   }
 

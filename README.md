@@ -71,7 +71,8 @@ version and old caches are dropped.
 
 ## Gif library
 
-Source gifs live in `assets-src/`: `sprites/<name>.<frames>.png` strips, `gifs/*.gif`,
+Source gifs live in `assets-src/`: `sprites/<name>.<frames>.<cols>.webp` (lossless frame
+grids, trimmed to the visible area), `gifs/*.gif`,
 and `generated/`, which holds procedural loops (hearts, planets, abstract shapes, early-3D
 wireframes and flat shading, Blender-style iridescent blobs, a weird pink elephant) rendered by
 `npm run generate:gifs` from `scripts/procedural/gifs.mjs`. `npm run build:sprites`
@@ -110,6 +111,6 @@ npm run build:assets    # all three
 | `src/library.js` | Gif library manifest and spritesheet helpers |
 | `src/sw-template.js` | Service worker (filled in by `vite.config.js`) |
 | `scripts/` | Asset generators and the spritesheet packer |
-| `assets-src/` | Source gifs and frame strips |
+| `assets-src/` | Source gifs and lossless frame grids |
 | `public/` | Static files copied into the build (sprites, logo, icons, manifest) |
 | `docs/` | Built site served by GitHub Pages |
