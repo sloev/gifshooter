@@ -59,6 +59,7 @@
           <div id="present-url" class="url"></div>
           <div id="present-peers" class="peers">0 painters</div>
         </div>
+        <button id="share-present" class="fs-toggle" aria-label="Share link" title="Share"></button>
         <button id="fullscreen" class="fs-toggle" aria-label="Toggle fullscreen" title="Fullscreen" hidden>
           <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path class="fs-enter" d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" /><path class="fs-exit" d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" /></svg>
         </button>
@@ -69,8 +70,9 @@
     <div id="paint" class="view" hidden>
       <canvas id="pad"></canvas>
       <div id="paint-status" class="status">looking for the screen…</div>
-      <button id="hold-exit" class="hold corner tl" aria-label="Hold 5 seconds to exit"><span>✕</span></button>
-      <button id="hold-gif" class="hold corner tr" aria-label="Hold 5 seconds to pick a gif"><canvas id="gif-preview" width="96" height="96"></canvas></button>
+      <button id="hold-exit" class="hold corner tl" aria-label="Hold 1 second to exit"><span>✕</span></button>
+      <button id="hold-share" class="hold small corner br" aria-label="Hold 1 second, then release, to share"></button>
+      <button id="hold-gif" class="hold corner tr" aria-label="Hold 1 second to pick a gif"><canvas id="gif-preview" width="96" height="96"></canvas></button>
       <div id="picker" hidden>
         <div class="picker-head">
           <span>Pick a gif</span>

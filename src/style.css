@@ -166,6 +166,30 @@ a.button.secondary { color: var(--accent); }
 .hold canvas { width: 70px; height: 70px; border-radius: 50%; }
 .corner.tl { top: calc(12px + env(safe-area-inset-top)); left: calc(12px + env(safe-area-inset-left)); }
 .corner.tr { top: calc(12px + env(safe-area-inset-top)); right: calc(12px + env(safe-area-inset-right)); }
+.corner.br { bottom: calc(40px + env(safe-area-inset-bottom)); right: calc(12px + env(safe-area-inset-right)); }
+.hold.small { width: 64px; height: 64px; font-size: 1.3rem; }
+.hold.small svg { width: 24px; height: 24px; }
+.hold.ready { opacity: 1; box-shadow: 0 0 0 3px var(--me, var(--accent)); }
+
+#toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(80px + env(safe-area-inset-bottom));
+  transform: translate(-50%, 12px);
+  max-width: calc(100% - 32px);
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.85);
+  border: 1px solid rgba(127, 255, 212, 0.35);
+  color: var(--fg);
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+  z-index: 50;
+}
+#toast.show { opacity: 1; transform: translate(-50%, 0); }
 
 #picker {
   position: absolute;

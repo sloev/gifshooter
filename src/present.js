@@ -2,6 +2,7 @@ import QRCode from 'qrcode'
 import { connect } from './net.js'
 import { loadManifest, loadBitmap, frameRect, FPS, MAX_RING_FRAMES } from './library.js'
 import { painterUrl, homeUrl } from './rooms.js'
+import { shareLink, SHARE_ICON } from './share.js'
 
 const TICK_MS = 1000 / FPS
 const MARKER_MS = 10_000 // painter cursors fade out over this long
@@ -468,6 +469,10 @@ export async function startPresent(code) {
   cursor.onMessage = (data, { peerId }) => onCursor(data, peerId)
 
   let resizeTimer = 0
+  const shareButton = $('share-present')
+  shareButton.innerHTML = SHARE_ICON
+  shareButton.onclick = () => shareLink(url, code)
+
   // Fullscreen toggle in the header (hidden where the browser can't, e.g. iPhone Safari).
   const fsButton = $('fullscreen')
   const root = document.documentElement

@@ -1,7 +1,8 @@
 import NoSleep from 'nosleep.js'
 import { connect } from './net.js'
 import { loadManifest, loadBitmap, frameRect, FPS } from './library.js'
-import { homeUrl } from './rooms.js'
+import { homeUrl, painterUrl } from './rooms.js'
+import { shareLink, SHARE_ICON } from './share.js'
 
 const HOLD_MS = 1000 // corner buttons must be held this long
 const SEND_MS = 16 // cursor updates to the screen, at most ~60/s
@@ -203,6 +204,8 @@ export async function startPaint(code) {
     location.assign(homeUrl())
   })
   holdButton($('hold-gif'), () => openPicker())
+  $('hold-share').innerHTML = SHARE_ICON
+  holdButton($('hold-share'), () => shareLink(painterUrl(code), code), { onRelease: true })
 
   // ---- gif preview (current gif, animated in the corner button) -----------------
   const preview = $('gif-preview')
@@ -382,26 +385,34 @@ export async function startPaint(code) {
 
 // A button that only fires after being held for HOLD_MS, with a progress ring,
 // so a palm or stray finger while drawing hands-free can't trigger it.
-function holdButton(el, onFire) {
+// With onRelease, a full hold only arms the button and it fires when the finger lifts:
+// browsers only open things like the share sheet from a release, not mid-press.
+function holdButton(el, onFire, { onRelease = false } = {}) {
   let start = 0
   let raf = 0
   let pointer = null
+  let armed = false
 
   const reset = () => {
     cancelAnimationFrame(raf)
     pointer = null
-    el.classList.remove('holding')
+    armed = false
+    el.classList.remove('holding', 'ready')
     el.style.setProperty('--p', 0)
   }
   const tick = (now) => {
     const p = (now - start) / HOLD_MS
     el.style.setProperty('--p', Math.min(1, p).toFixed(3))
-    if (p >= 1) {
+    if (p < 1) {
+      raf = requestAnimationFrame(tick)
+    } else if (onRelease) {
+      armed = true
+      el.classList.add('ready')
+      navigator.vibrate?.(60)
+    } else {
       reset()
       navigator.vibrate?.(60)
       onFire()
-    } else {
-      raf = requestAnimationFrame(tick)
     }
   }
   el.addEventListener('pointerdown', (e) => {
@@ -416,7 +427,10 @@ function holdButton(el, onFire) {
     raf = requestAnimationFrame(tick)
   })
   const end = (e) => {
-    if (e.pointerId === pointer) reset()
+    if (e.pointerId !== pointer) return
+    const fire = armed && e.type === 'pointerup'
+    reset()
+    if (fire) onFire()
   }
   el.addEventListener('pointerup', end)
   el.addEventListener('pointercancel', end)
