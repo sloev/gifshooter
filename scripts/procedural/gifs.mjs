@@ -843,7 +843,7 @@ const weird = [
         for (let i = 0; i < 3; i++) c[i] = mix(c[i], tmp[i], dot * 0.8)
         light(h, c, { spec: 0.7, shine: 35, rim: 0.5, amb: 0.4 })
       }
-      return (x, y, out) => raymarch(sdf, x, y, out, shade, { bound: 1.25, steps: 150 })
+      return (x, y, out) => raymarch(sdf, x, y, out, shade, { bound: 1.25, steps: 150, fov: 0.27 })
     },
   },
 ]
