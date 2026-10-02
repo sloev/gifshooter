@@ -22,12 +22,21 @@ const SAMPLE_H = 54
 const $ = (id) => document.getElementById(id)
 const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v)
 
+// Phones and tablets have little GPU memory: Android Chrome silently evicts the contents
+// of GPU-backed canvases under pressure, and with ~120 of them the loop flickers as it
+// passes frames that were dropped. There the ring uses CPU-backed canvases and a
+// smaller budget. Override with &soft=1 / &soft=0 and &budget=<MB>.
+const params = new URLSearchParams(location.search)
+const MOBILE = matchMedia('(pointer: coarse)').matches || navigator.userAgentData?.mobile === true
+const SOFTWARE = params.has('soft') ? params.get('soft') !== '0' : MOBILE
+
 function makeSurface(width, height) {
   const canvas =
     typeof OffscreenCanvas !== 'undefined'
       ? new OffscreenCanvas(width, height)
       : Object.assign(document.createElement('canvas'), { width, height })
-  const ctx = canvas.getContext('2d', { alpha: false })
+  // willReadFrequently asks the browser for a CPU-backed canvas, which can't be evicted
+  const ctx = canvas.getContext('2d', { alpha: false, willReadFrequently: SOFTWARE })
   ctx.fillStyle = '#000'
   ctx.fillRect(0, 0, width, height)
   ctx.imageSmoothingQuality = 'medium'
@@ -43,6 +52,16 @@ class FrameRing {
     this.width = width
     this.height = height
     this.slots = Array.from({ length }, () => makeSurface(width, height))
+    // Safety net: if the browser still drops a frame's contents, refill it from the
+    // previous frame instead of leaving a black flash in the loop.
+    this.slots.forEach(({ canvas, ctx }, i) => {
+      canvas.addEventListener?.('contextrestored', () => {
+        ctx.fillStyle = '#000'
+        ctx.fillRect(0, 0, this.width, this.height)
+        const prev = this.slots[(i + length - 1) % length]
+        if (prev) ctx.drawImage(prev.canvas, 0, 0)
+      })
+    })
   }
 
   slot(t) {
@@ -63,9 +82,8 @@ class FrameRing {
 }
 
 function ringResolution(frames, cssW, cssH) {
-  const params = new URLSearchParams(location.search)
   const lowMem = navigator.deviceMemory && navigator.deviceMemory <= 4
-  const budgetMB = Number(params.get('budget')) || (lowMem ? 128 : 256)
+  const budgetMB = Number(params.get('budget')) || (MOBILE ? 48 : lowMem ? 128 : 256)
   const scale = Math.min(1, Math.sqrt((budgetMB * 1024 * 1024) / (frames * 4 * cssW * cssH)))
   return [Math.max(64, Math.round(cssW * scale)), Math.max(36, Math.round(cssH * scale))]
 }
@@ -366,7 +384,7 @@ export async function startPresent(code) {
     drawMarkers(now)
     if (debug) {
       debug.textContent =
-        `ring ${ringLength}×${ring.width}×${ring.height} · stamps ${stamps.length - head} (+${waiting.length} waiting) · sheets ${(atlasBytes / 1048576).toFixed(0)}MB` +
+        `ring ${ringLength}×${ring.width}×${ring.height} ${SOFTWARE ? "cpu" : "gpu"} · stamps ${stamps.length - head} (+${waiting.length} waiting) · sheets ${(atlasBytes / 1048576).toFixed(0)}MB` +
         ` · ${activity.toFixed(1)}/s · black ${(blackShare * 100).toFixed(0)}% · fade ${halfLife ? `half-life ${halfLife.toFixed(0)}s` : 'off'}`
     }
   }
