@@ -73,7 +73,18 @@ input {
 .card h2 { margin: 0 0 4px; font-size: 1rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
 .row { display: flex; gap: 8px; }
 .row input { flex: 1; }
-.fine { color: var(--muted); font-size: 0.85rem; text-align: center; margin-top: auto; padding-top: 8px; }
+.fine { color: var(--muted); font-size: 0.85rem; text-align: center; margin: 0; }
+footer.fine { padding-top: 4px; }
+.extras { margin-top: auto; padding-top: 16px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+a.button {
+  display: inline-block;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 10px;
+  padding: 0.7em 1em;
+  border: 1px solid var(--accent);
+}
+a.button.secondary { color: var(--accent); }
 .fine a { color: var(--accent); }
 
 /* Present */
@@ -97,6 +108,8 @@ input {
   white-space: nowrap;
 }
 #qr { width: 60px !important; height: 60px !important; border-radius: 4px; flex: none; image-rendering: pixelated; }
+.code-box { display: flex; flex-direction: column; line-height: 1; }
+.code-label { font-size: 0.65rem; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 2px; }
 .code { font-size: 1.9rem; font-weight: 800; letter-spacing: 0.08em; color: var(--accent); font-family: ui-monospace, Menlo, monospace; }
 .bar-meta { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .url { font-size: 0.8rem; color: var(--fg); opacity: 0.85; overflow: hidden; text-overflow: ellipsis; }

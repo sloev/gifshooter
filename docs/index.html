@@ -14,8 +14,8 @@
     <link rel="icon" href="./favicon.png" type="image/png" />
     <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
     <title>gifshooter</title>
-    <script type="module" crossorigin src="./assets/index-ckM_wHhX.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-Dp4r-10f.css">
+    <script type="module" crossorigin src="./assets/index-DLXUkiFJ.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-CNW7jo8j.css">
   </head>
   <body>
     <!-- Landing: pick a canvas to paint on, or present one -->
@@ -39,6 +39,11 @@
         </form>
         <button id="present-public" class="secondary">Present the public canvas</button>
       </section>
+      <div class="extras">
+        <button id="install" class="secondary" hidden>⬇ Install app</button>
+        <a class="button secondary" href="https://www.buymeacoffee.com/sloev" target="_blank" rel="noopener">☕ Buy me a coffee</a>
+      </div>
+      <p id="install-hint" class="fine" hidden>On iPhone/iPad: tap Share, then “Add to Home Screen”.</p>
       <footer class="fine">made with <span id="made-with">❤️</span> by <a href="https://supernihil.github.io">supernihil.github.io</a></footer>
     </main>
 
@@ -47,7 +52,10 @@
       <canvas id="board"></canvas>
       <header id="present-bar">
         <canvas id="qr"></canvas>
-        <div id="present-code" class="code"></div>
+        <div class="code-box">
+          <div class="code-label">code:</div>
+          <div id="present-code" class="code"></div>
+        </div>
         <div class="bar-meta">
           <div id="present-url" class="url"></div>
           <div id="present-peers" class="peers">0 painters</div>

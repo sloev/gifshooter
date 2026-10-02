@@ -1,7 +1,7 @@
 import QRCode from 'qrcode'
 import { connect } from './net.js'
 import { loadManifest, loadBitmap, frameRect, FPS, MAX_RING_FRAMES } from './library.js'
-import { painterUrl } from './rooms.js'
+import { painterUrl, homeUrl } from './rooms.js'
 
 const TICK_MS = 1000 / FPS
 const MARKER_MS = 10_000 // painter cursors fade out over this long
@@ -82,7 +82,8 @@ export async function startPresent(code) {
 
   const url = painterUrl(code)
   $('present-code').textContent = code
-  $('present-url').textContent = url.replace(/^https?:\/\//, '')
+  // The bar shows the plain site address next to the code; the QR goes straight in.
+  $('present-url').textContent = homeUrl().replace(/^https?:\/\//, '').replace(/\/$/, '')
   QRCode.toCanvas($('qr'), url, { margin: 2, width: 240, color: { dark: '#000', light: '#fff' } }).catch(console.error)
 
   const manifest = await loadManifest()
