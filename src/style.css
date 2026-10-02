@@ -75,6 +75,8 @@ input {
 .row input { flex: 1; }
 .fine { color: var(--muted); font-size: 0.85rem; text-align: center; margin-top: auto; padding-top: 8px; }
 .fine a { color: var(--accent); }
+.hint { min-height: 1.2em; margin-top: -4px; font-size: 0.8rem; color: var(--muted); }
+.hint.busy { color: #ffcf6e; }
 
 /* Present */
 #present, #paint { position: fixed; inset: 0; overflow: hidden; }

@@ -13,25 +13,10 @@ const TRAIL = 256 // recent points shown on the phone's minimap
 
 const $ = (id) => document.getElementById(id)
 const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v)
-const store = {
-  get: (k) => {
-    try {
-      return localStorage.getItem(k)
-    } catch {
-      return null
-    }
-  },
-  set: (k, v) => {
-    try {
-      localStorage.setItem(k, v)
-    } catch {}
-  },
-}
 
 export async function startPaint(code) {
   $('paint').hidden = false
   document.title = `gifshooter · ${code}`
-  store.set('gifshooter:last', code)
 
   const manifest = await loadManifest()
   const sprites = manifest.sprites

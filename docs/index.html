@@ -8,8 +8,8 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <link rel="icon" href="./logo.gif" />
     <title>gifshooter</title>
-    <script type="module" crossorigin src="./assets/index-Be7KvD0k.js"></script>
-    <link rel="stylesheet" crossorigin href="./assets/index-l8P01zmx.css">
+    <script type="module" crossorigin src="./assets/index-Dukr2kXu.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-VpkMiACo.css">
   </head>
   <body>
     <!-- Landing: pick a canvas to paint on, or present one -->
@@ -19,7 +19,7 @@
       <section class="card">
         <h2>Paint</h2>
         <form id="join-form" class="row">
-          <input id="join-code" type="text" inputmode="text" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="canvas code" maxlength="24" />
+          <input id="join-code" type="text" inputmode="text" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="code from the screen" maxlength="24" />
           <button type="submit">Join</button>
         </form>
         <button id="join-public" class="secondary">Join the public canvas</button>
@@ -27,11 +27,11 @@
 
       <section class="card">
         <h2>Present</h2>
-        <button id="present-new">New canvas with shortcode</button>
         <form id="present-form" class="row">
-          <input id="present-name" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="room name" maxlength="24" />
-          <button type="submit">Present named</button>
+          <input id="present-name" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="code or room name" maxlength="24" />
+          <button type="submit">Present</button>
         </form>
+        <div id="present-hint" class="hint" aria-live="polite"></div>
         <button id="present-public" class="secondary">Present the public canvas</button>
       </section>
       <footer class="fine">made with <span id="made-with">❤️</span> by <a href="https://supernihil.github.io">supernihil.github.io</a></footer>

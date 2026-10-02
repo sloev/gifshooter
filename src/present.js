@@ -401,8 +401,9 @@ export async function startPresent(code) {
     return best
   }
   const sendInfo = (peerId) => hello.send({ ...info(), hue: hues.get(peerId) }, { target: peerId }).catch(() => {})
+  const probes = new Set() // landing pages checking whether this code is taken
   const updatePeers = () => {
-    const n = peers.size - screens.size
+    const n = peers.size - screens.size - probes.size
     $('present-peers').textContent = `${n} painter${n === 1 ? '' : 's'}`
   }
 
@@ -415,14 +416,15 @@ export async function startPresent(code) {
   room.onPeerLeave = (peerId) => {
     peers.delete(peerId)
     screens.delete(peerId)
+    probes.delete(peerId)
     hues.delete(peerId)
     const p = painters.get(peerId)
     if (p) p.stroke = false
     updatePeers()
   }
   hello.onMessage = (data, { peerId }) => {
-    if (data?.role === 'screen') {
-      screens.add(peerId)
+    if (data?.role === 'screen' || data?.role === 'probe') {
+      ;(data.role === 'screen' ? screens : probes).add(peerId)
       hues.delete(peerId)
     }
     updatePeers()
