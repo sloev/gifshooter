@@ -23,8 +23,10 @@ screen and phones need the same list).
 | `?c=<code>` | Paint on a named room or shortcode room |
 | `?c=<code>&present` | Present that canvas on a big screen |
 
-"New canvas with shortcode" picks a random 4-letter code. Named rooms use whatever
-name you type (lowercased). The presenter shows a small strip at the top with a QR code,
+The Present field is pre-filled with a random 5-letter code. Before suggesting it, the
+page joins that room for a few seconds to check nobody is in it (signalling is
+serverless, so this is the only way to know). You can type your own name instead; it
+tells you whether that room is already in use. The presenter shows a small strip at the top with a QR code,
 the code and the URL.
 
 ## Present mode
