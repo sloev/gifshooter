@@ -2,22 +2,24 @@
   "name": "gifshooter",
   "private": true,
   "version": "0.0.0",
+  "description": "Paint with animated gifs on a shared big screen, using your phone as a trackpad. Serverless WebRTC via public Nostr relays.",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "build:sprites": "node scripts/build-sprites.mjs",
     "preview": "vite preview",
     "generate:gifs": "node scripts/generate-gifs.mjs",
-    "generate:logo": "node scripts/generate-logo.mjs"
-  },
-  "devDependencies": {
-    "sharp": "^0.35.5",
-    "vite": "^8.3.2"
+    "generate:logo": "node scripts/generate-logo.mjs",
+    "build:sprites": "node scripts/build-sprites.mjs",
+    "build:assets": "npm run generate:gifs && npm run generate:logo && npm run build:sprites"
   },
   "dependencies": {
     "nosleep.js": "^0.12.0",
     "qrcode": "^1.5.4",
     "trystero": "^0.25.4"
+  },
+  "devDependencies": {
+    "sharp": "^0.35.5",
+    "vite": "^8.3.2"
   }
 }

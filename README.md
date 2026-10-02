@@ -59,23 +59,57 @@ Fullscreen trackpad (no accelerometer):
 
 The hold delay is there so you can paint hands-free without leaving by accident.
 
+## Install as an app
+
+gifshooter is an installable PWA ("Add to Home Screen" / the install button in the
+address bar). Installed, it opens fullscreen, which suits paint mode.
+
+A service worker (generated at build time from `src/sw-template.js`) precaches the app
+shell, so it starts instantly and works offline up to the point of connecting.
+Spritesheets are cached the first time they're used. Each deploy gets a new cache
+version and old caches are dropped.
+
 ## Gif library
 
 Source gifs live in `assets-src/`: `sprites/<name>.<frames>.png` strips, `gifs/*.gif`,
 and `generated/`, which holds procedural loops (hearts, planets, abstract shapes, early-3D
-wireframes and flat shading, Blender-style iridescent blobs) rendered by
+wireframes and flat shading, Blender-style iridescent blobs, a weird pink elephant) rendered by
 `npm run generate:gifs` from `scripts/procedural/gifs.mjs`. `npm run build:sprites`
 trims them all, caps them at 120 frames and 192 px, and packs each into a grid
 spritesheet (WebP with alpha), plus an animated thumbnail sheet for the picker
 and `public/sprites/manifest.json`.
 
+The animated logo and the app icons are rendered by `npm run generate:logo`
+(`scripts/generate-logo.mjs`).
+
 ## Develop
 
 ```sh
 npm install
-npm run generate:gifs   # only after changing scripts/procedural/
-npm run generate:logo   # only after changing scripts/generate-logo.mjs
-npm run build:sprites   # only after changing assets-src/
 npm run dev
-npm run build           # writes docs/ for GitHub Pages
+npm run build           # writes docs/ for GitHub Pages (commit it)
 ```
+
+Only needed after changing the assets or their generators:
+
+```sh
+npm run generate:gifs   # scripts/procedural/ -> assets-src/generated/
+npm run generate:logo   # logo.webp, icons, favicon
+npm run build:sprites   # assets-src/ -> public/sprites/
+npm run build:assets    # all three
+```
+
+## Layout
+
+| Path | What |
+| --- | --- |
+| `src/main.js` | Landing page and routing to paint / present |
+| `src/present.js` | Big screen: frame ring, stamping, fading, painter markers |
+| `src/paint.js` | Phone: trackpad, hold buttons, gif picker |
+| `src/net.js`, `src/rooms.js` | Trystero rooms and room codes |
+| `src/library.js` | Gif library manifest and spritesheet helpers |
+| `src/sw-template.js` | Service worker (filled in by `vite.config.js`) |
+| `scripts/` | Asset generators and the spritesheet packer |
+| `assets-src/` | Source gifs and frame strips |
+| `public/` | Static files copied into the build (sprites, logo, icons, manifest) |
+| `docs/` | Built site served by GitHub Pages |

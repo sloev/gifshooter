@@ -3,17 +3,23 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="description" content="Paint with animated gifs on a shared big screen, using your phone as a trackpad." />
     <meta name="theme-color" content="#000000" />
+    <meta name="color-scheme" content="dark" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="apple-mobile-web-app-title" content="gifshooter" />
     <meta name="mobile-web-app-capable" content="yes" />
-    <link rel="icon" href="/favicon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" href="/favicon.png" type="image/png" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <title>gifshooter</title>
     <link rel="stylesheet" href="/src/style.css" />
   </head>
   <body>
     <!-- Landing: pick a canvas to paint on, or present one -->
     <main id="landing" class="view" hidden>
-      <img class="logo" src="/logo.webp" width="800" height="176" alt="gifshooter" />
+      <img class="logo" src="/logo.webp" width="800" height="176" alt="gifshooter" fetchpriority="high" decoding="async" />
 
       <section class="card">
         <h2>Paint</h2>
