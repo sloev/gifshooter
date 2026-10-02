@@ -14,7 +14,11 @@ if (!code) {
 function showLanding() {
   const $ = (id) => document.getElementById(id)
   $('landing').hidden = false
-  const fun = ['❤️', '💖', '💘', '💝', '💜', '🧡', '💛', '💚', '💙', '🩷', '✨', '🌈', '🦄', '🍩', '🪐', '🔥', '👾', '🎉', '🍄', '🌀']
+  const fun = [
+    '❤️', '💖', '💘', '💝', '💜', '🧡', '💛', '💚', '💙', '🩷',
+    '✨', '🌈', '🦄', '🍩', '🪐', '🔥', '👾', '🎉', '🍄', '🌀',
+    '🚀', '🛸', '🎨', '🍕', '🐙', '🦖', '🍭', '💾', '🕹️', '🪩',
+  ]
   $('made-with').textContent = fun[Math.floor(Math.random() * fun.length)]
   const go = (url) => location.assign(url)
 
