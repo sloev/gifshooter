@@ -59,6 +59,7 @@ function showLanding() {
     else $('present-name').focus()
   }
   $('present-name').value = randomCode()
+  showTested($('tested'))
 
   const install = $('install')
   const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
@@ -73,4 +74,16 @@ function showLanding() {
       $('install-hint').hidden = false
     }
   }
+}
+
+// Which browsers the cross-browser suite (tests/browsers.py) last verified; shown briefly.
+async function showTested(el) {
+  try {
+    const { date, results } = await (await fetch('./tested-browsers.json')).json()
+    const working = results.filter((r) => r.ok).map((r) => (r.skipped?.length ? `${r.label}: screens only` : r.label))
+    if (!working.length) return
+    const day = new Date(date).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })
+    el.textContent = `✓ Tested & working: ${working.join(' · ')} (${day})`
+    el.hidden = false
+  } catch {}
 }

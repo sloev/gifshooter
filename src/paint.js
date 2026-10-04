@@ -25,7 +25,7 @@ export async function startPaint(code) {
   let spriteId = sprites[Math.floor(Math.random() * sprites.length)].id
 
   // ---- network -------------------------------------------------------------
-  const { room, hello, cursor } = connect(code)
+  const { room, hello, cursor, offline } = connect(code)
   const screens = new Set()
   let aspect = 16 / 9 // of the presenting screen; updated from its hello
   let hue = null // this painter's colour, handed out by the first screen we meet
@@ -33,7 +33,9 @@ export async function startPaint(code) {
 
   const status = $('paint-status')
   const updateStatus = () => {
-    status.textContent = screens.size
+    status.textContent = offline
+      ? "This browser can't connect (no WebRTC). Try Chrome, Firefox or Safari."
+      : screens.size
       ? `${code} · 1 finger draws · 2 fingers move`
       : `${code} · looking for the screen…`
   }

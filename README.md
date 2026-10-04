@@ -100,6 +100,20 @@ npm run build:sprites   # assets-src/ -> public/sprites/
 npm run build:assets    # all three
 ```
 
+## Cross-browser tests
+
+`npm run test:browsers` builds the site, then `tests/browsers.py` (Selenium) checks every
+available engine on its own: landing, present, paint, QR, gif preview, the 1 s hold and the
+animated picker. It also pairs each engine with Chromium over real WebRTC, signalled
+through a local Nostr relay (`tests/relay.mjs`), with each side taking turns as screen
+and painter. Engines without WebRTC (Ubuntu's WebKitGTK is built without it; real Safari
+has it) get the UI checks plus a check that the page says it can't connect.
+
+Results are written to `public/tested-browsers.json`, and the landing page shows them for
+a few seconds before fading the note away. Browsers are found through env vars:
+`CHROME_BIN` + `CHROMEDRIVER`, `FIREFOX_BIN` + `GECKODRIVER`, and WebKitGTK's
+`WebKitWebDriver` (run under `xvfb-run`). Needs `pip install selenium`.
+
 ## Layout
 
 | Path | What |
@@ -111,6 +125,7 @@ npm run build:assets    # all three
 | `src/library.js` | Gif library manifest and spritesheet helpers |
 | `src/sw-template.js` | Service worker (filled in by `vite.config.js`) |
 | `scripts/` | Asset generators and the spritesheet packer |
+| `tests/` | Cross-browser Selenium suite and a local Nostr relay |
 | `assets-src/` | Source gifs and lossless frame grids |
 | `public/` | Static files copied into the build (sprites, logo, icons, manifest) |
 | `docs/` | Built site served by GitHub Pages |

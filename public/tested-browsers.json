@@ -1,0 +1,64 @@
+{
+  "date": "2026-10-04",
+  "results": [
+    {
+      "browser": "Chromium",
+      "label": "Chrome/Chromium 141",
+      "ok": true,
+      "checks": {
+        "landing loads": true,
+        "random 5-letter code": true,
+        "present renders": true,
+        "QR code drawn": true,
+        "paint renders": true,
+        "gif preview animates": true,
+        "1 s hold opens picker": true,
+        "picker thumbnails animate": true,
+        "connects as screen, Chrome painting": true,
+        "strokes arrive as screen, Chrome painting": true,
+        "connects painting on a Chrome screen": true,
+        "strokes arrive painting on a Chrome screen": true
+      },
+      "skipped": []
+    },
+    {
+      "browser": "Firefox",
+      "label": "Firefox 157",
+      "ok": true,
+      "checks": {
+        "landing loads": true,
+        "random 5-letter code": true,
+        "present renders": true,
+        "QR code drawn": true,
+        "paint renders": true,
+        "gif preview animates": true,
+        "1 s hold opens picker": true,
+        "picker thumbnails animate": true,
+        "connects as screen, Chrome painting": true,
+        "strokes arrive as screen, Chrome painting": true,
+        "connects painting on a Chrome screen": true,
+        "strokes arrive painting on a Chrome screen": true
+      },
+      "skipped": []
+    },
+    {
+      "browser": "WebKit",
+      "label": "WebKit 2.52 (Safari's engine)",
+      "ok": true,
+      "checks": {
+        "landing loads": true,
+        "random 5-letter code": true,
+        "present renders": true,
+        "QR code drawn": true,
+        "paint renders": true,
+        "gif preview animates": true,
+        "1 s hold opens picker": true,
+        "picker thumbnails animate": true,
+        "explains missing WebRTC": true
+      },
+      "skipped": [
+        "peer-to-peer (this build has no WebRTC)"
+      ]
+    }
+  ]
+}

@@ -1,13 +1,13 @@
 // Service worker template. vite.config.js fills in the build hash and the list of
 // app-shell files to precache, and emits the result as sw.js.
-const VERSION = '2b4c0a658626'
+const VERSION = '869aaccb53e9'
 const PRECACHE = [
   "./",
-  "assets/index-Cwv3jgFp.js",
-  "assets/paint-C9eXH8sV.js",
-  "assets/present-Bc6CL7qR.js",
-  "assets/share-DxquwQIy.js",
-  "assets/index-DrpT6637.css",
+  "assets/index-Dw9HTbyG.js",
+  "assets/paint-DrrvdJH0.js",
+  "assets/present-DfEDz-SD.js",
+  "assets/share-D12om3Vx.js",
+  "assets/index-qZLxExyD.css",
   "favicon.png",
   "icons/apple-touch-icon.png",
   "icons/icon-192.png",
@@ -16,7 +16,8 @@ const PRECACHE = [
   "logo.webp",
   "manifest.webmanifest",
   "sprites/manifest.json",
-  "sprites/thumbs.webp"
+  "sprites/thumbs.webp",
+  "tested-browsers.json"
 ]
 const SHELL = `gifshooter-shell-${VERSION}`
 const SPRITES = `gifshooter-sprites-${VERSION}`

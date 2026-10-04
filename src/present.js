@@ -417,7 +417,7 @@ export async function startPresent(code) {
   raf = requestAnimationFrame(frame)
 
   // ---- network -------------------------------------------------------------
-  const { room, hello, cursor } = connect(code)
+  const { room, hello, cursor, offline } = connect(code)
   const peers = new Set()
   const screens = new Set()
   const info = () => ({ role: 'screen', aspect: board.clientWidth / board.clientHeight, frames: ringLength })
@@ -442,7 +442,7 @@ export async function startPresent(code) {
   const sendInfo = (peerId) => hello.send({ ...info(), hue: hues.get(peerId) }, { target: peerId }).catch(() => {})
   const updatePeers = () => {
     const n = peers.size - screens.size
-    $('present-peers').textContent = `${n} painter${n === 1 ? '' : 's'}`
+    $('present-peers').textContent = offline ? 'no WebRTC in this browser' : `${n} painter${n === 1 ? '' : 's'}`
   }
 
   room.onPeerJoin = (peerId) => {
@@ -467,6 +467,7 @@ export async function startPresent(code) {
     updatePeers()
   }
   cursor.onMessage = (data, { peerId }) => onCursor(data, peerId)
+  updatePeers()
 
   let resizeTimer = 0
   const shareButton = $('share-present')

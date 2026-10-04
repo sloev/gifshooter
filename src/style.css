@@ -75,6 +75,11 @@ input {
 .row input { flex: 1; }
 .fine { color: var(--muted); font-size: 0.85rem; text-align: center; margin: 0; }
 footer.fine { padding-top: 4px; }
+/* "tested on" note: shows for a few seconds, then fades away */
+.tested { font-size: 0.75rem; animation: tested-fade 1.5s ease 6s forwards; }
+@keyframes tested-fade {
+  to { opacity: 0; visibility: hidden; }
+}
 .extras { margin-top: auto; padding-top: 16px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
 a.button {
   display: inline-block;
