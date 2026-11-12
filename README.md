@@ -14,6 +14,11 @@ the site is static (GitHub Pages from `docs/`).
 To use other relays, add `&relays=wss://relay.one,wss://relay.two` to the URL (both
 screen and phones need the same list).
 
+Relay connections can die quietly (an idle laptop or router dropping them) while still
+looking open, which would hide anyone who joins later until the screen is reloaded. So
+`src/net.js` probes quiet relay connections every 10 s and reconnects dead ones, and a
+phone that hasn't found its screen re-announces itself every 8 s.
+
 ## Rooms
 
 | URL | What |

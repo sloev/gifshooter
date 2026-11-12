@@ -1,12 +1,12 @@
 // Service worker template. vite.config.js fills in the build hash and the list of
 // app-shell files to precache, and emits the result as sw.js.
-const VERSION = '93dc82e2bbda'
+const VERSION = '0a6009e7c8cf'
 const PRECACHE = [
   "./",
-  "assets/index-BK2vTWYJ.js",
-  "assets/paint-BOp9TYt4.js",
-  "assets/present-FEXtgTW6.js",
-  "assets/share-D12om3Vx.js",
+  "assets/index-C4mxgY7O.js",
+  "assets/paint-DUZPKXUV.js",
+  "assets/present-Cei3jeDZ.js",
+  "assets/share-D54cXkS9.js",
   "assets/index-D-oyhm_2.css",
   "favicon.png",
   "icons/apple-touch-icon.png",

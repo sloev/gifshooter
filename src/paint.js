@@ -57,6 +57,17 @@ export async function startPaint(code) {
     if (screens.delete(peerId)) updateStatus()
   }
 
+  // Keep knocking until a screen answers. Trystero announces a peer a few times when it
+  // joins and then only once a minute, so if the screen missed those (its relay link
+  // was down, say) we'd wait a long time. Rejoining announces afresh.
+  let lastKnock = performance.now()
+  setInterval(() => {
+    if (offline || screens.size || document.visibilityState !== 'visible') return
+    if (performance.now() - lastKnock < 8_000) return
+    lastKnock = performance.now()
+    room.rejoin()
+  }, 1000)
+
   // ---- cursor state ----------------------------------------------------------
   const pos = { x: 0.5, y: 0.5 }
   let drawing = false
