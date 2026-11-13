@@ -7,17 +7,17 @@ Live: https://sloev.github.io/gifshooter/
 
 ## How it connects
 
-Peer-to-peer WebRTC via [Trystero](https://github.com/dmotz/trystero), signalled
-through Trystero's default set of **public Nostr relays**. There's no server of our own;
-the site is static (GitHub Pages from `docs/`).
+Peer-to-peer WebRTC via [CORVAX](https://github.com/sloev/CORVAX). Every tab is a peer
+with its own key (kept for the tab's lifetime, so a reload stays the same peer). The
+screen publishes its presence on the topic `gifshooter:canvas:<code>` (a 2-minute lease
+that CORVAX renews) and accepts DataChannels; phones watch that topic and connect to
+each screen they see, then stream their cursor straight to it. Signalling goes over
+HTTPS through CORVAX anchors (ordinary peers anyone can run, falling back to
+`corvax.sloev.workers.dev`), and connections that can't go direct are relayed. There's
+no server of our own; the site is static (GitHub Pages from `docs/`).
 
-To use other relays, add `&relays=wss://relay.one,wss://relay.two` to the URL (both
-screen and phones need the same list).
-
-Relay connections can die quietly (an idle laptop or router dropping them) while still
-looking open, which would hide anyone who joins later until the screen is reloaded. So
-`src/net.js` probes quiet relay connections every 10 s and reconnects dead ones, and a
-phone that hasn't found its screen re-announces itself every 8 s.
+To use specific anchors, add `&anchors=<anchor line or http(s) URL>,…` to the URL (screen
+and phones alike).
 
 ## Rooms
 
@@ -110,7 +110,7 @@ npm run build:assets    # all three
 `npm run test:browsers` builds the site, then `tests/browsers.py` (Selenium) checks every
 available engine on its own: landing, present, paint, QR, gif preview, the 1 s hold and the
 animated picker. It also pairs each engine with Chromium over real WebRTC, signalled
-through a local Nostr relay (`tests/relay.mjs`), with each side taking turns as screen
+through a local CORVAX anchor (started by the suite), with each side taking turns as screen
 and painter. Engines without WebRTC (Ubuntu's WebKitGTK is built without it; real Safari
 has it) get the UI checks plus a check that the page says it can't connect.
 
@@ -126,11 +126,11 @@ a few seconds before fading the note away. Browsers are found through env vars:
 | `src/main.js` | Landing page and routing to paint / present |
 | `src/present.js` | Big screen: frame ring, stamping, fading, painter markers |
 | `src/paint.js` | Phone: trackpad, hold buttons, gif picker |
-| `src/net.js`, `src/rooms.js` | Trystero rooms and room codes |
+| `src/net.js`, `src/rooms.js` | CORVAX peers and topics, room codes |
 | `src/library.js` | Gif library manifest and spritesheet helpers |
 | `src/sw-template.js` | Service worker (filled in by `vite.config.js`) |
 | `scripts/` | Asset generators and the spritesheet packer |
-| `tests/` | Cross-browser Selenium suite and a local Nostr relay |
+| `tests/` | Cross-browser Selenium suite |
 | `assets-src/` | Source gifs and lossless frame grids |
 | `public/` | Static files copied into the build (sprites, logo, icons, manifest) |
 | `docs/` | Built site served by GitHub Pages |

@@ -25,7 +25,7 @@ export async function startPaint(code) {
   let spriteId = sprites[Math.floor(Math.random() * sprites.length)].id
 
   // ---- network -------------------------------------------------------------
-  const { room, hello, cursor, offline } = connect(code)
+  const { room, hello, cursor, offline } = connect(code, 'painter')
   const screens = new Set()
   let aspect = 16 / 9 // of the presenting screen; updated from its hello
   let hue = null // this painter's colour, handed out by the first screen we meet
@@ -56,17 +56,6 @@ export async function startPaint(code) {
   room.onPeerLeave = (peerId) => {
     if (screens.delete(peerId)) updateStatus()
   }
-
-  // Keep knocking until a screen answers. Trystero announces a peer a few times when it
-  // joins and then only once a minute, so if the screen missed those (its relay link
-  // was down, say) we'd wait a long time. Rejoining announces afresh.
-  let lastKnock = performance.now()
-  setInterval(() => {
-    if (offline || screens.size || document.visibilityState !== 'visible') return
-    if (performance.now() - lastKnock < 8_000) return
-    lastKnock = performance.now()
-    room.rejoin()
-  }, 1000)
 
   // ---- cursor state ----------------------------------------------------------
   const pos = { x: 0.5, y: 0.5 }

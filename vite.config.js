@@ -36,6 +36,9 @@ function serviceWorker() {
 export default {
   base: './',
   plugins: [serviceWorker()],
+  resolve: {
+    alias: { werift: new URL('./src/stubs/werift.js', import.meta.url).pathname },
+  },
   build: {
     outDir: 'docs',
     emptyOutDir: true,

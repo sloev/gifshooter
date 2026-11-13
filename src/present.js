@@ -417,7 +417,7 @@ export async function startPresent(code) {
   raf = requestAnimationFrame(frame)
 
   // ---- network -------------------------------------------------------------
-  const { room, hello, cursor, offline } = connect(code)
+  const { room, hello, cursor, offline } = connect(code, 'screen')
   const peers = new Set()
   const screens = new Set()
   const info = () => ({ role: 'screen', aspect: board.clientWidth / board.clientHeight, frames: ringLength })

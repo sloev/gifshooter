@@ -1,7 +1,7 @@
 """Cross-browser checks for gifshooter, driven by Selenium.
 
 Each available engine (Chromium, Firefox, WebKitGTK) is tested on its own and paired
-with Chromium over real WebRTC (signalled through a local Nostr relay), in both the
+with Chromium over real WebRTC (signalled through a local CORVAX anchor), in both the
 presenter and the painter role. Engines built without WebRTC (Ubuntu's WebKitGTK) get
 the UI checks only, plus a check that the page explains it can't connect. Results go to public/tested-browsers.json, which the
 landing page shows briefly.
@@ -30,9 +30,10 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 
 ROOT = Path(__file__).resolve().parent.parent
-PORT, RELAY_PORT = 4173, 7777
+PORT, ANCHOR_PORT = 4173, 4799
 BASE = f"http://localhost:{PORT}/"
-RELAY = f"&relays=ws://localhost:{RELAY_PORT}"
+# a local CORVAX anchor instead of the public network, so the suite runs offline
+NET = f"&anchors=http://127.0.0.1:{ANCHOR_PORT}/"
 
 
 # ---- browsers -------------------------------------------------------------------
@@ -133,11 +134,11 @@ def check_solo(d):
     out["landing loads"] = bool(wait(lambda: js(d, "return document.querySelector('.logo').naturalWidth") > 0))
     out["random 5-letter code"] = bool(re.fullmatch(r"[a-z]{5}", js(d, "return document.getElementById('present-name').value")))
 
-    d.get(BASE + "?c=solo&present&debug" + RELAY)
+    d.get(BASE + "?c=solo&present&debug" + NET)
     out["present renders"] = bool(wait(lambda: stamps(d) >= 0)) and js(d, "return document.getElementById('present-code').textContent") == "solo"
     out["QR code drawn"] = bool(wait(lambda: canvas_painted(d, "#qr")))
 
-    d.get(BASE + "?c=solo" + RELAY)
+    d.get(BASE + "?c=solo" + NET)
     out["paint renders"] = bool(wait(lambda: js(d, "return !document.getElementById('paint').hidden")))
     out["gif preview animates"] = bool(wait(lambda: canvas_painted(d, "#gif-preview")))
 
@@ -150,9 +151,9 @@ def check_solo(d):
 
 
 def check_pair(presenter, painter, code):
-    presenter.get(BASE + f"?c={code}&present&debug" + RELAY)
+    presenter.get(BASE + f"?c={code}&present&debug" + NET)
     wait(lambda: stamps(presenter) >= 0)
-    painter.get(BASE + f"?c={code}" + RELAY)
+    painter.get(BASE + f"?c={code}" + NET)
     connected = bool(wait(lambda: "finger" in js(painter, "return document.getElementById('paint-status').textContent"), 40))
     if not connected:
         return False, False
@@ -180,7 +181,7 @@ def run():
                 if js(d, "return typeof RTCPeerConnection") == "undefined":
                     # e.g. Ubuntu's WebKitGTK is built without WebRTC; real Safari has it.
                     # The page must say so instead of silently failing.
-                    d.get(BASE + "?c=solo" + RELAY)
+                    d.get(BASE + "?c=solo" + NET)
                     checks["explains missing WebRTC"] = bool(wait(lambda: "no WebRTC" in js(d, "return document.getElementById('paint-status').textContent"), 10))
                     skipped.append("peer-to-peer (this build has no WebRTC)")
                 else:
@@ -210,12 +211,15 @@ def run():
 
 
 if __name__ == "__main__":
-    relay = subprocess.Popen(["node", str(ROOT / "tests" / "relay.mjs"), str(RELAY_PORT)], stdout=subprocess.DEVNULL)
+    anchor = subprocess.Popen(
+        ["node", str(ROOT / "node_modules/@sloev/corvax/bin/corvax.js"), "anchor", "--port", str(ANCHOR_PORT), "--public-host", "127.0.0.1"],
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+    )
     server = subprocess.Popen(["npx", "vite", "preview", "--port", str(PORT), "--strictPort"], cwd=ROOT, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     try:
         time.sleep(3)
         ok = run()
     finally:
         server.terminate()
-        relay.terminate()
+        anchor.terminate()
     sys.exit(0 if ok else 1)
